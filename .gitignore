@@ -8,3 +8,8 @@ CLAUDE.md
 **/*.log
 .venv/
 local/
+setup_riscv_dv.sh
+hw/top/test/riscv_dv_asm/elf_suites/
+hw/top/test/riscv_dv_asm/gen_asm/
+hw/top/test/riscv_dv_asm/test_asm/
+hw/top/test/riscv_dv_asm/logs/

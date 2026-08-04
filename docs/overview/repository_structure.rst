@@ -62,9 +62,8 @@ Zeppelin's repository is organized in the following structure:
     - ``spi_flash/``: A Python program to communicate a text-based
       ``address: data`` mapping to an FPGA emulation of Zeppelin
       over SPI
-    - ``verif_gen_elf_tests.py``, ``verif_riscv_dv_*.py``,
-      ``verif_elf_*.yml``: Helpers for generating ELF-based test
-      suites and driving the
+    - ``verif_riscv_dv_batch.py``, ``verif_elf_suites.yaml``:
+      Helpers for generating ELF-based test suites and driving the
       `riscv-dv <https://github.com/chipsalliance/riscv-dv>`_
       random-instruction framework
  - ``types/``: Common SystemVerilog types (``MemMsg``)

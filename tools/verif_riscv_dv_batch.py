@@ -27,26 +27,39 @@ from pathlib import Path
 #-------------------------------------------------------------------------
 # Paths
 #-------------------------------------------------------------------------
+#
+# BUILD_DIR and RISCV_DV_CLONE_PATH default to the values below but are
+# overridable via --build_dir / --riscv_dv_path (see main()); the globals
+# here are only the defaults used to populate argparse.
 
-REPO_ROOT          = Path(__file__).resolve().parent.parent
-VERSIONS_YAML      = Path(__file__).resolve().parent / "verif_elf_suites.yaml"
-BUILD_DIR          = REPO_ROOT / "build_RISCV_DV_BATCH_SCRIPT_DESIGNATED___"
-ELF_SUITES_DIR     = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "elf_suites"
-GEN_ASM_DIR        = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "gen_asm"
-TEST_ASM_DIR       = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "test_asm"
-CUSTOM_TARGETS_DIR = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "custom_targets"
-LOG_DIR            = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "logs"
+REPO_ROOT              = Path(__file__).resolve().parent.parent
+VERSIONS_YAML          = Path(__file__).resolve().parent / "verif_elf_suites.yaml"
+DEFAULT_BUILD_DIR      = REPO_ROOT / "build_RISCV_DV_BATCH_SCRIPT_DESIGNATED___"
+DEFAULT_RISCV_DV_PATH  = Path.home() / "riscv-dv"
+ELF_SUITES_DIR         = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "elf_suites"
+GEN_ASM_DIR            = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "gen_asm"
+TEST_ASM_DIR           = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "test_asm"
+CUSTOM_TARGETS_DIR     = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "custom_targets"
+LOG_DIR                = REPO_ROOT / "hw" / "top" / "test" / "riscv_dv_asm" / "logs"
 
 #-------------------------------------------------------------------------
 # Report / email configuration
 #-------------------------------------------------------------------------
+#
+# No email is ever sent unless --email is passed on the command line; see
+# main(). REPORT_EMAIL_FROM/HOST/PORT assume a local mail relay
+# (sendmail/postfix) listening on port 25 -- if there isn't one,
+# _send_failure_email just prints a warning and continues.
 
-REPORT_EMAIL_TO   = "simeon.turner34@gmail.com"
 REPORT_EMAIL_FROM = "zeppelin-verif@localhost"
 REPORT_SMTP_HOST  = "localhost"
 REPORT_SMTP_PORT  = 25
 
-RISCV_DV_CLONE_PATH = Path.home() / "riscv-dv"
+# Set from args in main(); module-level so step_* functions (called from
+# both main() and step_batch()) don't need it threaded through every call.
+RISCV_DV_CLONE_PATH = DEFAULT_RISCV_DV_PATH
+BUILD_DIR           = DEFAULT_BUILD_DIR
+
 # Base flags shared by every riscv-dv invocation.
 # Per-call flags (-o, --custom_target, --co/--so/--steps=all, --seed) are
 # appended at call sites.
@@ -103,6 +116,22 @@ _WIDTH = 72
 
 def _banner( msg ):
   print(f"\n{'=' * _WIDTH}\n  {msg}\n{'=' * _WIDTH}")
+
+def _check_riscv_dv_clone():
+  """
+  Verify RISCV_DV_CLONE_PATH points at a riscv-dv checkout (looks for run.py),
+  exiting with a clear error otherwise instead of letting subprocess.run fail
+  later with an opaque FileNotFoundError/CalledProcessError.
+  """
+  if not (RISCV_DV_CLONE_PATH / "run.py").exists():
+    print(f"Error: no riscv-dv checkout found at {RISCV_DV_CLONE_PATH}\n"
+          f"  (expected to find {RISCV_DV_CLONE_PATH / 'run.py'})\n"
+          f"  Clone it there, e.g.:\n"
+          f"    git clone https://github.com/chipsalliance/riscv-dv.git {RISCV_DV_CLONE_PATH}\n"
+          f"  or point --riscv_dv_path at an existing clone.",
+          file=sys.stderr)
+    sys.exit(1)
+
 
 def _run( cmd, cwd, capture=False, check=True ):
   """Run a shell command, streaming or capturing output."""
@@ -354,6 +383,7 @@ def step_compile_riscv_dv():
   can then use ``--so`` against the same per-target output directory to skip
   recompilation.
   """
+  _check_riscv_dv_clone()
   targets = sorted(p.name for p in CUSTOM_TARGETS_DIR.iterdir() if p.is_dir())
 
   _banner("Compiling riscv-dv generator for all custom targets (--co)")
@@ -394,6 +424,7 @@ def step_gen_asm( sim_only=True, seed=None ):
   Returns:
     int: The seed used for all riscv-dv invocations this run.
   """
+  _check_riscv_dv_clone()
   targets = sorted(p.name for p in CUSTOM_TARGETS_DIR.iterdir() if p.is_dir())
 
   flag = "--so" if sim_only else "--steps=all"
@@ -729,17 +760,17 @@ def _write_report( iteration, seed, instr_cnt, results, timestamp, log_dir ):
   return text
 
 
-def _send_failure_email( report_text, iteration, timestamp ):
+def _send_failure_email( report_text, iteration, timestamp, email_to ):
   """Send the report by email when failures are detected."""
   subject = f"[zeppelin-verif] FAILURE in batch iteration {iteration} ({timestamp})"
   msg     = MIMEText(report_text)
   msg["Subject"] = subject
   msg["From"]    = REPORT_EMAIL_FROM
-  msg["To"]      = REPORT_EMAIL_TO
+  msg["To"]      = email_to
   try:
     with smtplib.SMTP(REPORT_SMTP_HOST, REPORT_SMTP_PORT, timeout=10) as s:
-      s.sendmail(REPORT_EMAIL_FROM, [REPORT_EMAIL_TO], msg.as_string())
-    print(f"  Failure email sent to {REPORT_EMAIL_TO}")
+      s.sendmail(REPORT_EMAIL_FROM, [email_to], msg.as_string())
+    print(f"  Failure email sent to {email_to}")
   except Exception as e:
     print(f"  Warning: could not send email ({e})", file=sys.stderr)
 
@@ -747,7 +778,8 @@ def _send_failure_email( report_text, iteration, timestamp ):
 # Step: Batch (setup + generation/test loop)
 #=========================================================================
 
-def step_batch( parallel, skip_setup=False, stop_on_failure=False, max_iterations=1000 ):
+def step_batch( parallel, skip_setup=False, stop_on_failure=False, max_iterations=1000,
+                 email_to=None ):
   """
   Full batch flow: setup once, then loop incrementing instruction count.
 
@@ -767,6 +799,7 @@ def step_batch( parallel, skip_setup=False, stop_on_failure=False, max_iteration
        is preserved so the ELF suite binaries do not need to be rebuilt).
 
   Runs for max_iterations iterations, or forever if max_iterations is None (Ctrl+C to stop).
+  A failure email is sent only when email_to is not None (see --email).
   """
   # ---- Log directory (one per batch run) -------------------------------
   batch_ts  = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -800,9 +833,10 @@ def step_batch( parallel, skip_setup=False, stop_on_failure=False, max_iteration
 
       timestamp   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
       report_text = _write_report(iteration, seed, instr_cnt, results, timestamp, batch_log_dir)
-      if not ok:
+      if not ok and email_to is not None:
         email_text = _format_report(iteration, seed, instr_cnt, results, timestamp, failures_only=True)
-        _send_failure_email(email_text, iteration, timestamp)
+        _send_failure_email(email_text, iteration, timestamp, email_to)
+      if not ok:
         if stop_on_failure:
           print(f"\n  Stopping batch after iteration {iteration} due to failure (--stop_on_failure).")
           break
@@ -820,10 +854,10 @@ def step_batch( parallel, skip_setup=False, stop_on_failure=False, max_iteration
       # Phase 2 (100–999): +10 every iteration
       elif instr_cnt < 1000:
         instr_cnt += 10
-      # Phase 3 (>=1000): doubling increment, saturate at 1M
-      elif instr_cnt < 1_000_000:
-        instr_cnt     = min(instr_cnt + exp_increment, 1_000_000)
-        exp_increment = min(int(exp_increment * 1.2), 1_000_000)
+      # Phase 3 (>=1000): doubling increment, saturate at 100k
+      elif instr_cnt < 100_000:
+        instr_cnt     = min(instr_cnt + exp_increment, 100_000)
+        exp_increment = min(int(exp_increment * 1.2), 100_000)
 
       iteration += 1
 
@@ -905,9 +939,28 @@ def main():
   )
   parser.add_argument(
     "--parallel", type=int, default=1,
-    help="Number of parallel compile/run workers (default: CPU count)"
+    help="Number of parallel compile/run workers (default: 1)"
+  )
+  parser.add_argument(
+    "--riscv_dv_path", type=Path, default=DEFAULT_RISCV_DV_PATH, metavar="PATH",
+    help=f"Path to a riscv-dv checkout (default: {DEFAULT_RISCV_DV_PATH}). "
+         "Only checked for steps that invoke riscv-dv "
+         "(--compile_riscv_dv, --gen_asm, --batch)."
+  )
+  parser.add_argument(
+    "--build_dir", type=Path, default=DEFAULT_BUILD_DIR, metavar="PATH",
+    help=f"CMake build directory to create/use (default: {DEFAULT_BUILD_DIR})"
+  )
+  parser.add_argument(
+    "--email", default=None, metavar="ADDRESS",
+    help="Email address to send failure reports to during --batch. "
+         "No email is sent unless this is given (default: none)."
   )
   args = parser.parse_args()
+
+  global RISCV_DV_CLONE_PATH, BUILD_DIR
+  RISCV_DV_CLONE_PATH = args.riscv_dv_path.expanduser().resolve()
+  BUILD_DIR            = args.build_dir.expanduser().resolve()
 
   build_dir = BUILD_DIR
 
@@ -938,7 +991,7 @@ def main():
     sys.exit(0)
 
   if args.config_build:
-    step_config_build(parallel)
+    step_config_build(args.parallel)
     sys.exit(0)
 
   if args.run_tests:
@@ -948,7 +1001,7 @@ def main():
   if args.batch:
     max_iterations = None if args.unbound else args.bound
     step_batch(args.parallel, skip_setup=args.no_setup, stop_on_failure=args.stop_on_failure,
-               max_iterations=max_iterations)
+               max_iterations=max_iterations, email_to=args.email)
     sys.exit(0)
 
   print("Nothing to do yet. Pass --batch, --clean, --gen_elf, --gen_asm, --transform_asm, --config_build, --run_tests, or --instr_cnt N.")
