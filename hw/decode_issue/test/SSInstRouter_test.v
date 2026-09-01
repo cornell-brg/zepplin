@@ -3,6 +3,7 @@
 //========================================================================
 // A testbench for the SSInstRouter crossbar scheduler
 
+`include "defs/UArch.v"
 `include "hw/decode_issue/SSInstRouter.v"
 `include "test/TestUtils.v"
 `include "intf/CommitNotif.v"

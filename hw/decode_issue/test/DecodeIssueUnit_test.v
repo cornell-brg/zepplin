@@ -90,6 +90,7 @@ module DecodeIssueUnitTestSuite #(
 
   DecodeIssueUnit #(
     .p_num_pipes     (p_num_pipes),
+    .p_seq_num_bits  (p_seq_num_bits),
     .p_num_phys_regs (p_num_phys_regs),
     .p_num_fe_lanes  (p_num_fe_lanes),
     .p_num_be_lanes  (p_num_be_lanes),

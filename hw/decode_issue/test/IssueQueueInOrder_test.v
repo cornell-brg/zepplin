@@ -46,28 +46,36 @@ module IssueQueueInOrderTestSuite #(
   // Instantiate design under test
   //----------------------------------------------------------------------
 
-  logic [31:0]               dut_ins_msg_pc;
-  logic [p_addr_bits-1:0]    dut_ins_msg_preg [2];
-  rv_uop                     dut_ins_msg_decoder_uop;
-  logic [4:0]                dut_ins_msg_decoder_waddr;
-  logic [31:0]               dut_ins_msg_imm;
-  logic                      dut_ins_msg_decoder_op2_sel;
-  logic                      dut_ins_msg_decoder_op3_sel;
-  logic [p_seq_num_bits-1:0] dut_ins_msg_seq_num;
-  logic [p_addr_bits-1:0]    dut_ins_msg_alloc_preg;
-  logic [p_addr_bits-1:0]    dut_ins_msg_alloc_ppreg;
-  logic                      dut_ins_en;
+  logic                      dut_ins_try;
   logic                      dut_ins_rdy;
   logic [p_entry_bits:0]     dut_avail_slots;
+
+  // Veri..ator does not like unpacked arrays in structs, so src_preg0/1 and
+  // src_pending0/1 are kept as separate scalar fields rather than [2]
+  // arrays.
+  typedef struct packed {
+    logic [31:0]               pc;
+    logic [p_addr_bits-1:0]    src_preg0;
+    logic [p_addr_bits-1:0]    src_preg1;
+    logic                      src_pending0;
+    logic                      src_pending1;
+    rv_uop                     uop;
+    logic [4:0]                waddr;
+    logic [31:0]               imm;
+    logic                      op2_sel;
+    logic                      op3_sel;
+    logic [p_seq_num_bits-1:0] seq_num;
+    logic [p_addr_bits-1:0]    alloc_preg;
+    logic [p_addr_bits-1:0]    alloc_ppreg;
+    logic                      predicted_taken;
+  } t_ins_msg;
+
+  t_ins_msg ins_msg;
 
   D__XIntf #(
     .p_seq_num_bits   (p_seq_num_bits),
     .p_phys_addr_bits (p_addr_bits)
   ) Ex ();
-
-  logic [p_addr_bits-1:0] dut_rt_lookup_preg    [2];
-  logic                   dut_rt_lookup_pending [2];
-  logic                   dut_rt_lookup_en      [2];
 
   logic [p_addr_bits-1:0]  dut_rf_raddr [2];
   logic [31:0]             dut_rf_rdata [2];
@@ -77,6 +85,7 @@ module IssueQueueInOrderTestSuite #(
   ) complete_notif [p_num_be_lanes] ();
 
   IssueQueueInOrder #(
+    .t_msg          (t_ins_msg),
     .p_depth        (p_depth),
     .p_num_regs     (p_num_regs),
     .p_seq_num_bits (p_seq_num_bits),
@@ -85,65 +94,22 @@ module IssueQueueInOrderTestSuite #(
     .clk     (clk),
     .rst     (rst),
 
-    .ins_msg_pc               (dut_ins_msg_pc),
-    .ins_msg_preg             (dut_ins_msg_preg),
-    .ins_msg_decoder_uop      (dut_ins_msg_decoder_uop),
-    .ins_msg_decoder_waddr    (dut_ins_msg_decoder_waddr),
-    .ins_msg_imm              (dut_ins_msg_imm),
-    .ins_msg_decoder_op2_sel  (dut_ins_msg_decoder_op2_sel),
-    .ins_msg_decoder_op3_sel  (dut_ins_msg_decoder_op3_sel),
-    .ins_msg_seq_num          (dut_ins_msg_seq_num),
-    .ins_msg_alloc_preg       (dut_ins_msg_alloc_preg),
-    .ins_msg_alloc_ppreg      (dut_ins_msg_alloc_ppreg),
-    .ins_en                   (dut_ins_en),
-    .ins_rdy                  (dut_ins_rdy),
-    .avail_slots              (dut_avail_slots),
+    .ins_msg     (ins_msg),
+    .ins_try     (dut_ins_try),
+    .ins_rdy     (dut_ins_rdy),
+    .avail_slots (dut_avail_slots),
 
-    .Ex                       (Ex),
+    .Ex          (Ex),
 
-    .rt_lookup_preg           (dut_rt_lookup_preg),
-    .rt_lookup_pending        (dut_rt_lookup_pending),
-    .rt_lookup_en             (dut_rt_lookup_en),
+    .rf_raddr    (dut_rf_raddr),
+    .rf_rdata    (dut_rf_rdata),
 
-    .rf_raddr                 (dut_rf_raddr),
-    .rf_rdata                 (dut_rf_rdata),
-
-    .complete                 (complete_notif)
+    .complete    (complete_notif)
   );
 
   //----------------------------------------------------------------------
   // Insertion
   //----------------------------------------------------------------------
-
-  // Veri..ator does not like unpacked arrays in structs, we need to use
-  // the TestMCaller instead of TestCaller for compatibility
-   typedef struct packed {
-    logic [31:0]               pc;
-    logic [p_addr_bits-1:0]    preg0;
-    logic [p_addr_bits-1:0]    preg1;
-    rv_uop                     decoder_uop;
-    logic [4:0]                decoder_waddr;
-    logic [31:0]               imm;
-    logic                      decoder_op2_sel;
-    logic                      decoder_op3_sel;
-    logic [p_seq_num_bits-1:0] seq_num;
-    logic [p_addr_bits-1:0]    alloc_preg;
-    logic [p_addr_bits-1:0]    alloc_ppreg;
-   } t_ins_msg;
-
-  t_ins_msg ins_msg;
-
-  assign dut_ins_msg_pc               = ins_msg.pc;
-  assign dut_ins_msg_preg[0]          = ins_msg.preg0;
-  assign dut_ins_msg_preg[1]          = ins_msg.preg1;
-  assign dut_ins_msg_decoder_uop      = ins_msg.decoder_uop;
-  assign dut_ins_msg_decoder_waddr    = ins_msg.decoder_waddr;
-  assign dut_ins_msg_imm              = ins_msg.imm;
-  assign dut_ins_msg_decoder_op2_sel  = ins_msg.decoder_op2_sel;
-  assign dut_ins_msg_decoder_op3_sel  = ins_msg.decoder_op3_sel;
-  assign dut_ins_msg_seq_num          = ins_msg.seq_num;
-  assign dut_ins_msg_alloc_preg       = ins_msg.alloc_preg;
-  assign dut_ins_msg_alloc_ppreg      = ins_msg.alloc_ppreg;
 
   // Unused output message
   logic unused_dut_ins_output;
@@ -155,7 +121,7 @@ module IssueQueueInOrderTestSuite #(
   ) ins_caller (
     .call_msg (ins_msg),
     .ret_msg  (unused_dut_ins_output),
-    .en       (dut_ins_en),
+    .en       (dut_ins_try),
     .rdy      (dut_ins_rdy),
     .*
   );
@@ -164,28 +130,34 @@ module IssueQueueInOrderTestSuite #(
 
   task send(
     logic [31:0]               pc,
-    logic [p_addr_bits-1:0]    preg0,
-    logic [p_addr_bits-1:0]    preg1,
-    rv_uop                     decoder_uop,
-    logic [4:0]                decoder_waddr,
+    logic [p_addr_bits-1:0]    src_preg0,
+    logic [p_addr_bits-1:0]    src_preg1,
+    logic                      src_pending0,
+    logic                      src_pending1,
+    rv_uop                     uop,
+    logic [4:0]                waddr,
     logic [31:0]               imm,
-    logic                      decoder_op2_sel,
-    logic                      decoder_op3_sel,
+    logic                      op2_sel,
+    logic                      op3_sel,
     logic [p_seq_num_bits-1:0] seq_num,
     logic [p_addr_bits-1:0]    alloc_preg,
-    logic [p_addr_bits-1:0]    alloc_ppreg
+    logic [p_addr_bits-1:0]    alloc_ppreg,
+    logic                      predicted_taken
   );
     msg_to_send.pc               = pc;
-    msg_to_send.preg0            = preg0;
-    msg_to_send.preg1            = preg1;
-    msg_to_send.decoder_uop      = decoder_uop;
-    msg_to_send.decoder_waddr    = decoder_waddr;
+    msg_to_send.src_preg0        = src_preg0;
+    msg_to_send.src_preg1        = src_preg1;
+    msg_to_send.src_pending0     = src_pending0;
+    msg_to_send.src_pending1     = src_pending1;
+    msg_to_send.uop              = uop;
+    msg_to_send.waddr            = waddr;
     msg_to_send.imm              = imm;
-    msg_to_send.decoder_op2_sel  = decoder_op2_sel;
-    msg_to_send.decoder_op3_sel  = decoder_op3_sel;
+    msg_to_send.op2_sel          = op2_sel;
+    msg_to_send.op3_sel          = op3_sel;
     msg_to_send.seq_num          = seq_num;
     msg_to_send.alloc_preg       = alloc_preg;
     msg_to_send.alloc_ppreg      = alloc_ppreg;
+    msg_to_send.predicted_taken  = predicted_taken;
 
     ins_caller.call(msg_to_send, 1'b1);
   endtask
@@ -290,57 +262,6 @@ module IssueQueueInOrderTestSuite #(
   endtask
 
   //----------------------------------------------------------------------
-  // Rename Table Blackbox
-  //----------------------------------------------------------------------
-  // Reference model: tracks pending status for each physical register.
-  // Initialized with all regs ready (not pending). The always_comb responds
-  // combinationally to whatever preg the DUT is currently looking up.
-
-  logic rt_ref_pending [p_num_regs-1:0];
-
-  initial begin
-    for (int i = 0; i < p_num_regs; i++) begin
-      rt_ref_pending[i] = 1'b0;
-    end
-  end
-
-  // Drive pending by indexing the reference table with the DUT's preg
-  always_comb begin
-    for (int i = 0; i < 2; i++) begin
-      dut_rt_lookup_pending[i] = rt_ref_pending[dut_rt_lookup_preg[i]];
-    end
-  end
-
-  // Set pending status for a single physical register
-  task rt_set_pending(
-    input logic [p_addr_bits-1:0] preg,
-    input logic                   pending
-  );
-    rt_ref_pending[preg] = pending;
-  endtask
-
-  // Reset reference table back to all ready
-  task rt_reset();
-    for (int i = 0; i < p_num_regs; i++) begin
-      rt_ref_pending[i] = 1'b0;
-    end
-  endtask
-
-  // Check DUT lookup outputs against expected preg/en values.
-  // Only checks preg when the corresponding en is expected high.
-  task rt_check(
-    input logic [p_addr_bits-1:0] exp_preg [2],
-    input logic                   exp_en   [2]
-  );
-    for (int i = 0; i < 2; i++) begin
-      `CHECK_EQ(dut_rt_lookup_en[i], exp_en[i]);
-      if (exp_en[i]) begin
-        `CHECK_EQ(dut_rt_lookup_preg[i], exp_preg[i]);
-      end
-    end
-  endtask
-
-  //----------------------------------------------------------------------
   // Register File Blackbox
   //----------------------------------------------------------------------
   // Reference model: maps each physical register address -> data.
@@ -417,7 +338,6 @@ module IssueQueueInOrderTestSuite #(
 
     // -----------------------------------------------------------------
     // Test 1: ADD, both sources ready, op1 and op2 from regfile
-    //   rename table: all pregs ready (default)
     //   regfile[3] = 2, regfile[7] = 1
     // -----------------------------------------------------------------
 
@@ -426,8 +346,8 @@ module IssueQueueInOrderTestSuite #(
 
     fork
       begin
-        //        pc      preg0 preg1 uop    waddr imm   op2s op3s seq  preg ppreg
-        send( 32'h200, 6'd3, 6'd7, OP_ADD, 5'd5, 32'd0, 1'b0, 1'b0, 5'd0, 6'd8, 6'd3 );
+        //        pc      preg0 preg1 pend0 pend1  uop    waddr imm    op2s  op3s  seq   preg  ppreg pred
+        send( 32'h200, 6'd3, 6'd7, 1'b0, 1'b0, OP_ADD, 5'd5, 32'd0, 1'b0, 1'b0, 5'd0, 6'd8, 6'd3, 1'b0 );
       end
       begin
         X_Ostream.recv( '{
@@ -450,7 +370,7 @@ module IssueQueueInOrderTestSuite #(
 
     fork
       begin
-        send( 32'h204, 6'd3, 6'd0, OP_ADD, 5'd6, 32'd10, 1'b1, 1'b0, 5'd1, 6'd9, 6'd5 );
+        send( 32'h204, 6'd3, 6'd0, 1'b0, 1'b0, OP_ADD, 5'd6, 32'd10, 1'b1, 1'b0, 5'd1, 6'd9, 6'd5, 1'b0 );
       end
       begin
         X_Ostream.recv( '{
@@ -467,31 +387,36 @@ module IssueQueueInOrderTestSuite #(
     join
 
     // -----------------------------------------------------------------
-    // Test 3: Source pending, woken by clearing pending in rename table
-    //   preg 12 is pending;  regfile[12] = 3
-    //   preg  7 is ready;    regfile[7]  = 1
-    //   Instruction stalls until pending is cleared.
+    // Test 3: Source 1 (rs2) pending, woken by completion
+    //   preg 7 is ready (regfile[7] = 1); preg 12 is pending (regfile[12] = 3)
+    //   Instruction stalls until src_preg1's completion arrives.
     // -----------------------------------------------------------------
 
-    rt_set_pending( 6'd12, 1'b1 );
     rf_set( 12, 32'd3 );
 
     fork
       begin
-        send( 32'h208, 6'd12, 6'd7, OP_ADD, 5'd4, 32'd0, 1'b0, 1'b0, 5'd2, 6'd10, 6'd6 );
+        send( 32'h208, 6'd7, 6'd12, 1'b0, 1'b1, OP_ADD, 5'd4, 32'd0, 1'b0, 1'b0, 5'd2, 6'd10, 6'd6, 1'b0 );
       end
       begin
-        // Wait for insert to land, then clear pending
+        // Wait for insert to land, then fire completion for preg 12
         repeat( 3 ) @( posedge clk );
         #1;
-        rt_set_pending( 6'd12, 1'b0 );
+        complete(
+          '{5'dx,  5'dx},     // seq_num [p_num_be_lanes]
+          '{5'dx,  5'dx},     // waddr   [p_num_be_lanes]
+          '{32'hx, 32'hx},    // wdata   [p_num_be_lanes]
+          '{1'b1,  1'b0},     // wen     [p_num_be_lanes]
+          '{6'd12, 6'dx},     // preg    [p_num_be_lanes]
+          '{1'b1,  1'b0}      // val     [p_num_be_lanes]
+        );
       end
       begin
         X_Ostream.recv( '{
           pc:      32'h208,
           seq_num: 5'd2,
-          op1:     32'd3,
-          op2:     32'd1,
+          op1:     32'd1,
+          op2:     32'd3,
           waddr:   5'd4,
           preg:    6'd10,
           ppreg:   6'd6,
@@ -501,30 +426,26 @@ module IssueQueueInOrderTestSuite #(
     join
 
     // -----------------------------------------------------------------
-    // Test 4: Source pending, woken by clearing pending via completion
-    //   preg 12 is pending (re-set);  regfile[12] = 3
-    //   Completion on lane 0 for preg 12, then clear pending.
+    // Test 4: Source 0 (rs1) pending, woken by completion
+    //   preg 12 is pending (regfile[12] = 3); preg 7 is ready (regfile[7] = 1)
     // -----------------------------------------------------------------
-
-    rt_set_pending( 6'd12, 1'b1 );
 
     fork
       begin
-        send( 32'h20c, 6'd12, 6'd7, OP_ADD, 5'd2, 32'd0, 1'b0, 1'b0, 5'd3, 6'd11, 6'd7 );
+        send( 32'h20c, 6'd12, 6'd7, 1'b1, 1'b0, OP_ADD, 5'd2, 32'd0, 1'b0, 1'b0, 5'd3, 6'd11, 6'd7, 1'b0 );
       end
       begin
-        // Wait for insert, then fire completion for preg 12 and clear pending
+        // Wait for insert, then fire completion for preg 12
         repeat( 3 ) @( posedge clk );
         #1;
         complete(
-          '{5'd3,  5'dx},     // seq_num [p_num_be_lanes]
-          '{5'd3,  5'dx},     // waddr   [p_num_be_lanes]
-          '{32'h0, 32'hx},   // wdata   [p_num_be_lanes]
-          '{1'b1,  1'b0},     // wen     [p_num_be_lanes]
-          '{6'd12, 6'dx},     // preg    [p_num_be_lanes]
-          '{1'b1,  1'b0}      // val     [p_num_be_lanes]
+          '{5'dx,  5'dx},
+          '{5'dx,  5'dx},
+          '{32'hx, 32'hx},
+          '{1'b1,  1'b0},
+          '{6'd12, 6'dx},
+          '{1'b1,  1'b0}
         );
-        rt_set_pending( 6'd12, 1'b0 );
       end
       begin
         X_Ostream.recv( '{
@@ -540,7 +461,6 @@ module IssueQueueInOrderTestSuite #(
       end
     join
 
-    rt_reset();
     rf_reset();
 
     t.test_case_end();

@@ -20,7 +20,6 @@ import TestEnv::*;
 module SSRenameTableTestSuite #(
   parameter p_suite_num        = 0,
   parameter p_num_phys_regs    = 36,
-  parameter p_num_lookup_ports = 2,
   parameter p_num_fe_lanes     = 2,
   parameter p_num_be_lanes     = 2
 );
@@ -44,16 +43,15 @@ module SSRenameTableTestSuite #(
   logic                  [4:0] dut_alloc_areg  [p_num_fe_lanes];
   logic [p_phys_addr_bits-1:0] dut_alloc_preg  [p_num_fe_lanes];
   logic [p_phys_addr_bits-1:0] dut_alloc_ppreg [p_num_fe_lanes];
-  logic                        dut_alloc_en    [p_num_fe_lanes];
+  // alloc_try and alloc_val are tied together here (driven by the same
+  // TestCaller .en) -- this suite never needs to exercise a lane that
+  // wants to allocate (try) without actually firing (val) this cycle.
+  logic                        dut_alloc_go    [p_num_fe_lanes];
   logic                        dut_alloc_rdy   [p_num_fe_lanes];
 
-  logic                  [4:0] dut_lookup_new_inst_areg [p_num_fe_lanes][2];
-  logic                        dut_lookup_new_inst_en   [p_num_fe_lanes][2];
-  logic [p_phys_addr_bits-1:0] dut_lookup_new_inst_preg [p_num_fe_lanes][2];
-
-  logic [p_phys_addr_bits-1:0] dut_lookup_iq_preg    [p_num_lookup_ports][2];
-  logic                        dut_lookup_iq_en      [p_num_lookup_ports][2];
-  logic                        dut_lookup_iq_pending [p_num_lookup_ports][2];
+  logic                  [4:0] dut_lookup_new_inst_areg    [p_num_fe_lanes][2];
+  logic [p_phys_addr_bits-1:0] dut_lookup_new_inst_preg    [p_num_fe_lanes][2];
+  logic                        dut_lookup_new_inst_pending [p_num_fe_lanes][2];
 
   CompleteNotif #(
     .p_phys_addr_bits (p_phys_addr_bits)
@@ -64,24 +62,20 @@ module SSRenameTableTestSuite #(
   ) commit_notif [p_num_be_lanes] ();
 
   SSRenameTable #(
-    .p_num_phys_regs    (p_num_phys_regs),
-    .p_num_lookup_ports (p_num_lookup_ports),
-    .p_num_fe_lanes     (p_num_fe_lanes),
-    .p_num_be_lanes     (p_num_be_lanes)
+    .p_num_phys_regs (p_num_phys_regs),
+    .p_num_fe_lanes  (p_num_fe_lanes),
+    .p_num_be_lanes  (p_num_be_lanes)
   ) dut (
     .alloc_areg  (dut_alloc_areg),
     .alloc_preg  (dut_alloc_preg),
     .alloc_ppreg (dut_alloc_ppreg),
-    .alloc_en    (dut_alloc_en),
+    .alloc_try   (dut_alloc_go),
+    .alloc_val   (dut_alloc_go),
     .alloc_rdy   (dut_alloc_rdy),
 
-    .lookup_new_inst_areg (dut_lookup_new_inst_areg),
-    .lookup_new_inst_en   (dut_lookup_new_inst_en),
-    .lookup_new_inst_preg (dut_lookup_new_inst_preg),
-
-    .lookup_iq_preg    (dut_lookup_iq_preg),
-    .lookup_iq_en      (dut_lookup_iq_en),
-    .lookup_iq_pending (dut_lookup_iq_pending),
+    .lookup_new_inst_areg    (dut_lookup_new_inst_areg),
+    .lookup_new_inst_preg    (dut_lookup_new_inst_preg),
+    .lookup_new_inst_pending (dut_lookup_new_inst_pending),
 
     .complete    (complete_notif),
     .commit      (commit_notif),
@@ -113,7 +107,7 @@ module SSRenameTableTestSuite #(
       ) alloc_caller (
         .call_msg (dut_alloc_areg[i]),
         .ret_msg  (alloc_ret_msg[i]),
-        .en       (dut_alloc_en[i]),
+        .en       (dut_alloc_go[i]),
         .rdy      (dut_alloc_rdy[i]),
         .*
       );
@@ -154,6 +148,10 @@ module SSRenameTableTestSuite #(
     input logic [p_phys_addr_bits-1:0] ppreg [p_num_fe_lanes],
     input logic                        valid [p_num_fe_lanes]
   );
+    // Countdown instead of `wait fork` -- Verilator's --timing scheduler
+    // hits an internal codegen bug (undeclared __Vtrigprevexpr_* symbol
+    // in a split translation unit) on `wait fork` here.
+    automatic int pending = p_num_fe_lanes;
     for( int j = 0; j < p_num_fe_lanes; j++ ) begin
       automatic int jj = j;
       fork
@@ -165,214 +163,66 @@ module SSRenameTableTestSuite #(
           msgs_from_alloc_val[jj]  = valid[jj];
           while(msgs_from_alloc_val[jj])
             #1;
+          pending--;
         end
       join_none
     end
-    wait fork;
+    while( pending > 0 )
+      #1;
   endtask
 
   //----------------------------------------------------------------------
   // Lookup new inst source registers
   //----------------------------------------------------------------------
 
-  typedef logic [4:0] t_lookup_new_inst_call_msg;
-  typedef struct packed {
-    logic [p_phys_addr_bits-1:0] preg;
-  } t_new_inst_lookup_ret_msg;
-
-  t_new_inst_lookup_ret_msg lookup_new_inst_ret_msg [p_num_fe_lanes][2];
-  generate
-    for( i = 0; i < p_num_fe_lanes; i++ ) begin: LOOKUP_NEW_INST_PORT
-      assign lookup_new_inst_ret_msg[i][0].preg = dut_lookup_new_inst_preg[i][0];
-      assign lookup_new_inst_ret_msg[i][1].preg = dut_lookup_new_inst_preg[i][1];
-
-      TestCaller #(
-        .t_call_msg (t_lookup_new_inst_call_msg),
-        .t_ret_msg  (t_new_inst_lookup_ret_msg)
-      ) lookup_new_inst_caller_0 (
-        .call_msg (dut_lookup_new_inst_areg[i][0]),
-        .ret_msg  (lookup_new_inst_ret_msg[i][0]),
-        .en       (dut_lookup_new_inst_en[i][0]),
-        .rdy      (1'b1),
-        .*
-      );
-
-      TestCaller #(
-        .t_call_msg (t_lookup_new_inst_call_msg),
-        .t_ret_msg  (t_new_inst_lookup_ret_msg)
-      ) lookup_new_inst_caller_1 (
-        .call_msg (dut_lookup_new_inst_areg[i][1]),
-        .ret_msg  (lookup_new_inst_ret_msg[i][1]),
-        .en       (dut_lookup_new_inst_en[i][1]),
-        .rdy      (1'b1),
-        .*
-      );
-    end
-  endgenerate
-
-  t_new_inst_lookup_ret_msg msg_from_new_inst_lookup      [p_num_fe_lanes][2];
-  logic               [4:0] msg_from_new_inst_lookup_areg [p_num_fe_lanes][2];
-  logic                     msg_from_new_inst_lookup_val  [p_num_fe_lanes][2];
-
-  generate
-    for( i = 0; i < p_num_fe_lanes; i++ ) begin
-      always @( posedge clk ) begin
-        #1;
-        fork
-          if( msg_from_new_inst_lookup_val[i][0] ) begin
-            LOOKUP_NEW_INST_PORT[i].lookup_new_inst_caller_0.call( 
-              msg_from_new_inst_lookup_areg[i][0],
-              msg_from_new_inst_lookup[i][0]
-            );
-          end
-          if( msg_from_new_inst_lookup_val[i][1] ) begin
-            LOOKUP_NEW_INST_PORT[i].lookup_new_inst_caller_1.call( 
-              msg_from_new_inst_lookup_areg[i][1],
-              msg_from_new_inst_lookup[i][1]
-            );
-          end
-        join
-
-        // verilator lint_off BLKSEQ
-        msg_from_new_inst_lookup_val[i][0] = 1'b0;
-        msg_from_new_inst_lookup_val[i][1] = 1'b0;
-        // verilator lint_on BLKSEQ
-      end
-
-      initial begin
-        msg_from_new_inst_lookup_val[i][0] = 1'b0;
-        msg_from_new_inst_lookup_val[i][1] = 1'b0;
-      end
-    end
-  endgenerate
-
-  t_new_inst_lookup_ret_msg lookup_new_inst_task_msg [p_num_fe_lanes][2];
+  // Purely combinational (no en/rdy handshake): the DUT drives
+  // lookup_new_inst_preg/pending live from whatever lookup_new_inst_areg
+  // currently holds. This also absorbs what used to be a separate
+  // lookup_iq_* pending-check interface, which no longer exists --
+  // pending status is now available through this same port (see
+  // test_case_5_pending_lifecycle).
 
   task lookup_new_inst_srcs(
-    input logic                  [4:0] lookup_areg [p_num_fe_lanes][2],
-    input logic [p_phys_addr_bits-1:0] lookup_preg [p_num_fe_lanes][2],
-    input logic                        valid       [p_num_fe_lanes][2]
+    input logic                  [4:0] areg     [p_num_fe_lanes][2],
+    input logic [p_phys_addr_bits-1:0] exp_preg [p_num_fe_lanes][2],
+    input logic                        valid    [p_num_fe_lanes][2]
   );
+    dut_lookup_new_inst_areg = areg;
+    // Sample after the same posedge the alloc() responder's own
+    // `always @(posedge clk) #1; ...call(...)` uses to assert
+    // alloc_try/alloc_areg, so same-cycle alloc forwarding (see
+    // SSRenameTable.v's "Alloc forwarding from earlier lanes" comment)
+    // is actually visible when this runs concurrently with alloc().
+    @( posedge clk );
+    #2;
     for( int j = 0; j < p_num_fe_lanes; j++ ) begin
-      automatic int jj = j;
-      fork
-        begin
-          lookup_new_inst_task_msg[jj][0]  = lookup_preg[jj][0];
-          lookup_new_inst_task_msg[jj][1]  = lookup_preg[jj][1];
-          msg_from_new_inst_lookup_areg[jj][0] = lookup_areg[jj][0];
-          msg_from_new_inst_lookup_areg[jj][1] = lookup_areg[jj][1];
-          msg_from_new_inst_lookup[jj][0]      = lookup_new_inst_task_msg[jj][0];
-          msg_from_new_inst_lookup[jj][1]      = lookup_new_inst_task_msg[jj][1];
-          msg_from_new_inst_lookup_val[jj][0]  = valid[jj][0];
-          msg_from_new_inst_lookup_val[jj][1]  = valid[jj][1];
-          while ( msg_from_new_inst_lookup_val[jj][0] || msg_from_new_inst_lookup_val[jj][1] ) begin
-            #1;
-          end
+      for( int k = 0; k < 2; k++ ) begin
+        if( valid[j][k] ) begin
+          `CHECK_EQ(dut_lookup_new_inst_preg[j][k], exp_preg[j][k]);
         end
-      join_none
+      end
     end
-    wait fork;
   endtask
-  
-  //----------------------------------------------------------------------
-  // Lookup IQ inst source registers
-  //----------------------------------------------------------------------
 
-  typedef logic [p_phys_addr_bits-1:0] t_lookup_iq_call_msg;
-  typedef struct packed {
-    logic pending;
-  } t_lookup_iq_ret_msg;
-
-  t_lookup_iq_ret_msg lookup_iq_ret_msg [p_num_lookup_ports][2];
-
-  generate
-    for( i = 0; i < p_num_lookup_ports; i++ ) begin: LOOKUP_IQ_PORT
-      assign lookup_iq_ret_msg[i][0].pending = dut_lookup_iq_pending[i][0];
-      assign lookup_iq_ret_msg[i][1].pending = dut_lookup_iq_pending[i][1];
-
-      TestCaller #(
-        .t_call_msg (t_lookup_iq_call_msg),
-        .t_ret_msg  (t_lookup_iq_ret_msg)
-      ) lookup_iq_caller_0 (
-        .call_msg (dut_lookup_iq_preg[i][0]),
-        .ret_msg  (lookup_iq_ret_msg[i][0]),
-        .en       (dut_lookup_iq_en[i][0]),
-        .rdy      (1'b1),
-        .*
-      );
-
-      TestCaller #(
-        .t_call_msg (t_lookup_iq_call_msg),
-        .t_ret_msg  (t_lookup_iq_ret_msg)
-      ) lookup_iq_caller_1 (
-        .call_msg (dut_lookup_iq_preg[i][1]),
-        .ret_msg  (lookup_iq_ret_msg[i][1]),
-        .en       (dut_lookup_iq_en[i][1]),
-        .rdy      (1'b1),
-        .*
-      );
-    end
-  endgenerate
-
-  t_lookup_iq_ret_msg          msg_from_lookup_iq      [p_num_lookup_ports][2];
-  logic [p_phys_addr_bits-1:0] msg_from_lookup_iq_preg [p_num_lookup_ports][2];
-  logic                        msg_from_lookup_iq_val  [p_num_lookup_ports][2];
-
-  generate
-    for( i = 0; i < p_num_lookup_ports; i++ ) begin
-      always @( posedge clk ) begin
-        #1;
-        if( msg_from_lookup_iq_val[i][0] ) begin
-          LOOKUP_IQ_PORT[i].lookup_iq_caller_0.call( 
-            msg_from_lookup_iq_preg[i][0],
-            msg_from_lookup_iq[i][0]
-          );
-        end
-        if( msg_from_lookup_iq_val[i][1] ) begin
-          LOOKUP_IQ_PORT[i].lookup_iq_caller_1.call( 
-            msg_from_lookup_iq_preg[i][1],
-            msg_from_lookup_iq[i][1]
-          );
-        end
-
-        // verilator lint_off BLKSEQ
-        msg_from_lookup_iq_val[i][0] = 1'b0;
-        msg_from_lookup_iq_val[i][1] = 1'b0;
-        // verilator lint_on BLKSEQ
-      end
-
-      initial begin
-        msg_from_lookup_iq_val[i][0] = 1'b0;
-        msg_from_lookup_iq_val[i][1] = 1'b0;
-      end
-    end
-  endgenerate
-
-  t_lookup_iq_ret_msg lookup_iq_src_task_msg [p_num_lookup_ports][2];
-
-  task lookup_iq_srcs(
-    input logic [p_phys_addr_bits-1:0] lookup_preg [p_num_lookup_ports][2],
-    input logic                        pending     [p_num_lookup_ports][2],
-    input logic                        valid       [p_num_lookup_ports][2]
+  task lookup_new_inst_pending(
+    input logic [4:0] areg        [p_num_fe_lanes][2],
+    input logic       exp_pending [p_num_fe_lanes][2],
+    input logic       valid       [p_num_fe_lanes][2]
   );
-    for( int j = 0; j < p_num_lookup_ports; j++ ) begin
-      automatic int jj = j;
-      fork
-        begin
-          lookup_iq_src_task_msg[jj][0]  = pending[jj][0];
-          lookup_iq_src_task_msg[jj][1]  = pending[jj][1];
-          msg_from_lookup_iq_preg[jj][0] = lookup_preg[jj][0];
-          msg_from_lookup_iq_preg[jj][1] = lookup_preg[jj][1];
-          msg_from_lookup_iq[jj][0]      = lookup_iq_src_task_msg[jj][0];
-          msg_from_lookup_iq[jj][1]      = lookup_iq_src_task_msg[jj][1];
-          msg_from_lookup_iq_val[jj][0]  = valid[jj][0];
-          msg_from_lookup_iq_val[jj][1]  = valid[jj][1];
-          while ( msg_from_lookup_iq_val[jj][0] || msg_from_lookup_iq_val[jj][1] ) begin
-            #1;
-          end
+    dut_lookup_new_inst_areg = areg;
+    // Sample after the same posedge the alloc() responder's own
+    // `always @(posedge clk) #1; ...call(...)` uses to assert
+    // alloc_try/alloc_areg, so same-cycle alloc forwarding (see
+    // SSRenameTable.v's "Alloc forwarding from earlier lanes" comment)
+    // is actually visible when this runs concurrently with alloc().
+    @( posedge clk );
+    #2;
+    for( int j = 0; j < p_num_fe_lanes; j++ ) begin
+      for( int k = 0; k < 2; k++ ) begin
+        if( valid[j][k] ) begin
+          `CHECK_EQ(dut_lookup_new_inst_pending[j][k], exp_pending[j][k]);
         end
-      join_none
-      wait fork;
+      end
     end
   endtask
 
@@ -588,34 +438,39 @@ module SSRenameTableTestSuite #(
     t.test_case_begin( "test_case_2_all_lane_allocate_lookup_no_overlap" );
     if( !t.run_test ) return;
 
-    for( int i = 0; i < p_num_fe_lanes; i++ ) begin
+    // Needs p_num_fe_lanes simultaneously-free physical registers (pregs
+    // 32..32+p_num_fe_lanes-1) -- skip for suites too narrow to have that
+    // much headroom (e.g. p_num_phys_regs=33 leaves only preg 32 free).
+    if( p_num_phys_regs >= 32 + p_num_fe_lanes ) begin
+      for( int i = 0; i < p_num_fe_lanes; i++ ) begin
 
-      alloc_areg[i]  = 5'(i + 1);
-      alloc_preg[i]  = p_phys_addr_bits'(i + 32);
-      alloc_ppreg[i] = p_phys_addr_bits'(i + 1);
-      alloc_valid[i] = 1'b1;
+        alloc_areg[i]  = 5'(i + 1);
+        alloc_preg[i]  = p_phys_addr_bits'(i + 32);
+        alloc_ppreg[i] = p_phys_addr_bits'(i + 1);
+        alloc_valid[i] = 1'b1;
 
-      for( int j = 0; j < 2; j++ ) begin
-        lookup_areg[i][j]  = 5'(p_num_fe_lanes + (i * 2) + j + 1);
-        lookup_preg[i][j]  = p_phys_addr_bits'(p_num_fe_lanes + (i * 2) + j + 1);
-        lookup_valid[i][j] = 1'b1;
+        for( int j = 0; j < 2; j++ ) begin
+          lookup_areg[i][j]  = 5'(p_num_fe_lanes + (i * 2) + j + 1);
+          lookup_preg[i][j]  = p_phys_addr_bits'(p_num_fe_lanes + (i * 2) + j + 1);
+          lookup_valid[i][j] = 1'b1;
+        end
       end
+
+      fork
+        alloc(
+          alloc_areg,
+          alloc_preg,
+          alloc_ppreg,
+          alloc_valid
+        );
+
+        lookup_new_inst_srcs(
+          lookup_areg,
+          lookup_preg,
+          lookup_valid
+        );
+      join
     end
-
-    fork
-      alloc(
-        alloc_areg, 
-        alloc_preg, 
-        alloc_ppreg, 
-        alloc_valid
-      );
-
-      lookup_new_inst_srcs(
-        lookup_areg, 
-        lookup_preg, 
-        lookup_valid
-      );
-    join
 
     t.test_case_end();
   endtask
@@ -639,8 +494,9 @@ module SSRenameTableTestSuite #(
     t.test_case_begin( "test_case_3_all_lane_allocate_lookup_with_overlap" );
     if( !t.run_test ) return;
 
-    // Only do test if more than one fe lane
-    if( p_num_fe_lanes > 1 ) begin
+    // Only do test if more than one fe lane, and there's enough headroom
+    // for 2 simultaneously-free physical registers (pregs 32, 33).
+    if( p_num_fe_lanes > 1 && p_num_phys_regs >= 34 ) begin
       for( int i = 0; i < p_num_fe_lanes; i++ ) begin
 
         // First lane allocates a register that the second lane looks up to
@@ -712,8 +568,9 @@ module SSRenameTableTestSuite #(
     t.test_case_begin( "test_case_4_some_lane_allocate_lookup_with_overlap" );
     if( !t.run_test ) return;
 
-    // Only do test if more than two fe lanes
-    if( p_num_fe_lanes > 2 ) begin
+    // Only do test if more than two fe lanes, and there's enough headroom
+    // for 3 simultaneously-free physical registers (pregs 32, 33, 34).
+    if( p_num_fe_lanes > 2 && p_num_phys_regs >= 35 ) begin
       for( int i = 0; i < p_num_fe_lanes; i++ ) begin
 
         // First lane allocates a register that the second lane looks up to
@@ -795,35 +652,40 @@ module SSRenameTableTestSuite #(
   endtask
 
   //----------------------------------------------------------------------
-  // test_case_5_iq_lookup
+  // test_case_5_pending_lifecycle
   //----------------------------------------------------------------------
+  // Was test_case_5_iq_lookup, driven through the now-removed lookup_iq_*
+  // (preg-indexed) interface. Pending status now lives on
+  // lookup_new_inst_pending (areg-indexed), so this exercises the same
+  // alloc -> pending -> complete -> not-pending lifecycle through that
+  // port instead.
 
-  task test_case_5_iq_lookup();
+  task test_case_5_pending_lifecycle();
     logic                  [4:0] alloc_areg  [p_num_fe_lanes];
     logic [p_phys_addr_bits-1:0] alloc_preg  [p_num_fe_lanes];
     logic [p_phys_addr_bits-1:0] alloc_ppreg [p_num_fe_lanes];
     logic                        alloc_valid [p_num_fe_lanes];
 
-    logic [p_phys_addr_bits-1:0] iq_lookup_preg [p_num_lookup_ports][2];
-    logic                        iq_pending     [p_num_lookup_ports][2];
-    logic                        iq_valid       [p_num_lookup_ports][2];
+    logic [4:0] lookup_areg  [p_num_fe_lanes][2];
+    logic       exp_pending  [p_num_fe_lanes][2];
+    logic       lookup_valid [p_num_fe_lanes][2];
 
     t_complete_msg compl_preg [p_num_be_lanes];
     logic          compl_val  [p_num_be_lanes];
 
-    t.test_case_begin( "test_case_5_iq_lookup" );
+    t.test_case_begin( "test_case_5_pending_lifecycle" );
     if( !t.run_test ) return;
 
-    // ---- Verify initial state: pregs are not pending ----
-    for( int j = 0; j < p_num_lookup_ports; j++ ) begin
-      iq_lookup_preg[j][0] = p_phys_addr_bits'(j * 2 + 1);
-      iq_lookup_preg[j][1] = p_phys_addr_bits'(j * 2 + 2);
-      iq_pending[j][0]     = 1'b0;
-      iq_pending[j][1]     = 1'b0;
-      iq_valid[j][0]       = 1'b1;
-      iq_valid[j][1]       = 1'b1;
+    // ---- Verify initial state: areg 1 and areg 2 are not pending ----
+    for( int j = 0; j < p_num_fe_lanes; j++ ) begin
+      lookup_areg[j][0]  = 5'd1;
+      lookup_areg[j][1]  = 5'd2;
+      exp_pending[j][0]  = 1'b0;
+      exp_pending[j][1]  = 1'b0;
+      lookup_valid[j][0] = 1'b1;
+      lookup_valid[j][1] = 1'b1;
     end
-    lookup_iq_srcs( iq_lookup_preg, iq_pending, iq_valid );
+    lookup_new_inst_pending( lookup_areg, exp_pending, lookup_valid );
 
     // ---- Allocate areg 1 on lane 0: areg 1 -> preg 32 (pending) ----
     for( int i = 0; i < p_num_fe_lanes; i++ ) begin
@@ -834,27 +696,16 @@ module SSRenameTableTestSuite #(
     end
     alloc( alloc_areg, alloc_preg, alloc_ppreg, alloc_valid );
 
-    // ---- Look up preg 32 (pending) and preg 0 (never pending) on all ports ----
-    for( int j = 0; j < p_num_lookup_ports; j++ ) begin
-      iq_lookup_preg[j][0] = p_phys_addr_bits'(32);
-      iq_lookup_preg[j][1] = p_phys_addr_bits'(0);
-      iq_pending[j][0]     = 1'b1;
-      iq_pending[j][1]     = 1'b0;
-      iq_valid[j][0]       = 1'b1;
-      iq_valid[j][1]       = 1'b1;
+    // ---- areg 1 (now pending) and areg 2 (never allocated, not pending) ----
+    for( int j = 0; j < p_num_fe_lanes; j++ ) begin
+      lookup_areg[j][0]  = 5'd1;
+      lookup_areg[j][1]  = 5'd2;
+      exp_pending[j][0]  = 1'b1;
+      exp_pending[j][1]  = 1'b0;
+      lookup_valid[j][0] = 1'b1;
+      lookup_valid[j][1] = 1'b1;
     end
-    lookup_iq_srcs( iq_lookup_preg, iq_pending, iq_valid );
-
-    // ---- Look up preg 32 (pending) and preg 2 (not pending) on all ports ----
-    for( int j = 0; j < p_num_lookup_ports; j++ ) begin
-      iq_lookup_preg[j][0] = p_phys_addr_bits'(32);
-      iq_lookup_preg[j][1] = p_phys_addr_bits'(2);
-      iq_pending[j][0]     = 1'b1;
-      iq_pending[j][1]     = 1'b0;
-      iq_valid[j][0]       = 1'b1;
-      iq_valid[j][1]       = 1'b1;
-    end
-    lookup_iq_srcs( iq_lookup_preg, iq_pending, iq_valid );
+    lookup_new_inst_pending( lookup_areg, exp_pending, lookup_valid );
 
     // ---- Complete preg 32 ----
     for( int j = 0; j < p_num_be_lanes; j++ ) begin
@@ -863,16 +714,16 @@ module SSRenameTableTestSuite #(
     end
     complete( compl_preg, compl_val );
 
-    // ---- Look up preg 32 (no longer pending) and preg 2 (not pending) ----
-    for( int j = 0; j < p_num_lookup_ports; j++ ) begin
-      iq_lookup_preg[j][0] = p_phys_addr_bits'(32);
-      iq_lookup_preg[j][1] = p_phys_addr_bits'(2);
-      iq_pending[j][0]     = 1'b0;
-      iq_pending[j][1]     = 1'b0;
-      iq_valid[j][0]       = 1'b1;
-      iq_valid[j][1]       = 1'b1;
+    // ---- areg 1 (no longer pending) and areg 2 (still not pending) ----
+    for( int j = 0; j < p_num_fe_lanes; j++ ) begin
+      lookup_areg[j][0]  = 5'd1;
+      lookup_areg[j][1]  = 5'd2;
+      exp_pending[j][0]  = 1'b0;
+      exp_pending[j][1]  = 1'b0;
+      lookup_valid[j][0] = 1'b1;
+      lookup_valid[j][1] = 1'b1;
     end
-    lookup_iq_srcs( iq_lookup_preg, iq_pending, iq_valid );
+    lookup_new_inst_pending( lookup_areg, exp_pending, lookup_valid );
 
     t.test_case_end();
   endtask
@@ -888,72 +739,59 @@ module SSRenameTableTestSuite #(
     test_case_2_all_lane_allocate_lookup_no_overlap();
     test_case_3_all_lane_allocate_lookup_with_overlap();
     test_case_4_some_lane_allocate_lookup_with_overlap();
-    test_case_5_iq_lookup();
+    test_case_5_pending_lifecycle();
   endtask
 endmodule
 
 //========================================================================
 // SSRenameTable_test
 //========================================================================
+// Suite count dropped from 8 to 6: the old suites 3 and 7 only swept
+// p_num_lookup_ports, a parameter that no longer exists now that the
+// removed lookup_iq_* interface's job is folded into lookup_new_inst_*
+// (see SSRenameTable.v) -- they'd otherwise be exact duplicates of
+// suite_1 and (old) suite_4.
 
 module SSRenameTable_test;
 
-  // Defaults (2 fe lanes, 2 be lanes, 2 lookup ports)
+  // Defaults (2 fe lanes, 2 be lanes)
   SSRenameTableTestSuite #(
     .p_suite_num        (1)
   ) suite_1();
 
-  // 1 fe lane, 1 be lane, 2 lookup ports
+  // 1 fe lane, 1 be lane
   SSRenameTableTestSuite #(
     .p_suite_num        (2),
     .p_num_fe_lanes     (1),
     .p_num_be_lanes     (1)
   ) suite_2();
 
-  // 2 fe lanes, 2 be lanes, 4 lookup ports
+  // 4 fe lanes, 4 be lanes
   SSRenameTableTestSuite #(
     .p_suite_num        (3),
-    .p_num_lookup_ports (4)
+    .p_num_fe_lanes     (4),
+    .p_num_be_lanes     (4)
   ) suite_3();
 
-  // 4 fe lanes, 4 be lanes, 4 lookup ports
+  // 1 fe lane, 4 be lanes
   SSRenameTableTestSuite #(
     .p_suite_num        (4),
-    .p_num_fe_lanes     (4),
-    .p_num_be_lanes     (4),
-    .p_num_lookup_ports (4)
+    .p_num_fe_lanes     (1),
+    .p_num_be_lanes     (4)
   ) suite_4();
 
-  // 1 fe lane, 4 be lanes, 4 lookup ports
+  // 4 fe lanes, 1 be lane
   SSRenameTableTestSuite #(
     .p_suite_num        (5),
-    .p_num_fe_lanes     (1),
-    .p_num_be_lanes     (4),
-    .p_num_lookup_ports (4)
+    .p_num_fe_lanes     (4),
+    .p_num_be_lanes     (1)
   ) suite_5();
 
-  // 4 fe lanes, 1 be lane, 4 lookup ports
+  // 2 fe lanes, 2 be lanes, 33 phys regs
   SSRenameTableTestSuite #(
     .p_suite_num        (6),
-    .p_num_fe_lanes     (4),
-    .p_num_be_lanes     (1),
-    .p_num_lookup_ports (4)
-  ) suite_6();
-
-  // 4 fe lanes, 4 be lanes, 1 lookup port
-  SSRenameTableTestSuite #(
-    .p_suite_num        (7),
-    .p_num_fe_lanes     (4),
-    .p_num_be_lanes     (4),
-    .p_num_lookup_ports (1)
-  ) suite_7();
-
-  // 2 fe lanes, 2 be lanes, 4 lookup ports
-  SSRenameTableTestSuite #(
-    .p_suite_num        (8),
-    .p_num_lookup_ports (4),
     .p_num_phys_regs    (33)
-  ) suite_8();
+  ) suite_6();
 
   int s;
 
@@ -967,8 +805,6 @@ module SSRenameTable_test;
     if ((s <= 0) || (s == 4)) suite_4.run_test_suite();
     if ((s <= 0) || (s == 5)) suite_5.run_test_suite();
     if ((s <= 0) || (s == 6)) suite_6.run_test_suite();
-    if ((s <= 0) || (s == 7)) suite_7.run_test_suite();
-    if ((s <= 0) || (s == 8)) suite_8.run_test_suite();
 
     test_bench_end();
   end

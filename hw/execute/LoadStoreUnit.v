@@ -249,7 +249,7 @@ module LoadStoreUnit #(
         waddr:   '0,
         preg:    '0,
         ppreg:   '0,
-        uop:     '0,
+        uop:     rv_uop'('0),
         offset:  '0
       };
     else
@@ -269,7 +269,7 @@ module LoadStoreUnit #(
         waddr:   '0,
         preg:    '0,
         ppreg:   '0,
-        uop:     '0,
+        uop:     rv_uop'('0),
         offset:  '0
       };
     else
