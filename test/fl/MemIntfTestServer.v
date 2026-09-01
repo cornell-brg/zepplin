@@ -39,12 +39,15 @@ module MemIntfTestServer #(
       mem.delete();
   end
 
-  task init_mem(
+  // A function, not a task -- the body never consumes simulation time,
+  // and it's called from Zeppelin_sim.v's init_mem, which is itself a
+  // function (export "DPI-C" requires it).
+  function void init_mem(
     input logic [31:0] addr,
     input logic [31:0] data
   );
     mem[addr] = data;
-  endtask
+  endfunction
 
   //----------------------------------------------------------------------
   // Keep track of cycles since reset

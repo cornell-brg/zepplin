@@ -148,9 +148,9 @@ module SSRenameTableTestSuite #(
     input logic [p_phys_addr_bits-1:0] ppreg [p_num_fe_lanes],
     input logic                        valid [p_num_fe_lanes]
   );
-    // Countdown instead of `wait fork` -- Verilator's --timing scheduler
-    // hits an internal codegen bug (undeclared __Vtrigprevexpr_* symbol
-    // in a split translation unit) on `wait fork` here.
+    // Don't use `wait fork` here -- Verilator's --timing scheduler hits
+    // an internal codegen bug (undeclared __Vtrigprevexpr_* symbol in a
+    // split translation unit) on it in this file.
     automatic int pending = p_num_fe_lanes;
     for( int j = 0; j < p_num_fe_lanes; j++ ) begin
       automatic int jj = j;
@@ -177,10 +177,8 @@ module SSRenameTableTestSuite #(
 
   // Purely combinational (no en/rdy handshake): the DUT drives
   // lookup_new_inst_preg/pending live from whatever lookup_new_inst_areg
-  // currently holds. This also absorbs what used to be a separate
-  // lookup_iq_* pending-check interface, which no longer exists --
-  // pending status is now available through this same port (see
-  // test_case_5_pending_lifecycle).
+  // currently holds (see test_case_5_pending_lifecycle for the pending
+  // side).
 
   task lookup_new_inst_srcs(
     input logic                  [4:0] areg     [p_num_fe_lanes][2],
@@ -654,11 +652,8 @@ module SSRenameTableTestSuite #(
   //----------------------------------------------------------------------
   // test_case_5_pending_lifecycle
   //----------------------------------------------------------------------
-  // Was test_case_5_iq_lookup, driven through the now-removed lookup_iq_*
-  // (preg-indexed) interface. Pending status now lives on
-  // lookup_new_inst_pending (areg-indexed), so this exercises the same
-  // alloc -> pending -> complete -> not-pending lifecycle through that
-  // port instead.
+  // Exercises the alloc -> pending -> complete -> not-pending lifecycle
+  // through lookup_new_inst_pending (areg-indexed).
 
   task test_case_5_pending_lifecycle();
     logic                  [4:0] alloc_areg  [p_num_fe_lanes];
@@ -746,11 +741,6 @@ endmodule
 //========================================================================
 // SSRenameTable_test
 //========================================================================
-// Suite count dropped from 8 to 6: the old suites 3 and 7 only swept
-// p_num_lookup_ports, a parameter that no longer exists now that the
-// removed lookup_iq_* interface's job is folded into lookup_new_inst_*
-// (see SSRenameTable.v) -- they'd otherwise be exact duplicates of
-// suite_1 and (old) suite_4.
 
 module SSRenameTable_test;
 

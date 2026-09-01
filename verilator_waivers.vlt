@@ -9,4 +9,3 @@ lint_off -rule GENUNNAMED
 lint_off -rule IMPORTSTAR
 lint_off -rule VARHIDDEN
 lint_off -rule MULTITOP
-lint_off -rule FUNCTIMECTL

@@ -1,16 +1,19 @@
 //========================================================================
 // SSInstRouter_test.v
 //========================================================================
-// A testbench for the SSInstRouter crossbar scheduler
+// A testbench for the SSInstRouter data mux.
+//
+// SSInstRouter is a pure combinational mux -- given a
+// route_idx/lane_to_pipe_map already computed elsewhere (by
+// SSInstMapper; see SSInstMapper_test.v), it just wires data through.
+// This test checks that it muxes the right message to the right pipe,
+// and correctly gates iq_ins_try/dispatch_go on
+// chk_pass/iq_val/iq_rdy.
 
-`include "defs/UArch.v"
 `include "hw/decode_issue/SSInstRouter.v"
 `include "test/TestUtils.v"
-`include "intf/CommitNotif.v"
-`include "test/fl/TestMPub.v"
 
 import TestEnv::*;
-import UArch::*;
 
 //========================================================================
 // SSInstRouterTestSuite
@@ -21,35 +24,11 @@ module SSInstRouterTestSuite #(
   parameter p_num_pipes        = 4,
   parameter p_num_input_lanes  = 4,
   parameter p_input_lanes_bits = p_num_input_lanes > 1 ? $clog2(p_num_input_lanes) : 1,
-  parameter p_iq_depth         = 8,
-  parameter p_seq_num_bits     = 8,
-  parameter p_num_iter         = 2,
-  parameter p_num_be_lanes     = 2
+  parameter p_pipe_bits        = p_num_pipes > 1 ? $clog2(p_num_pipes) : 1
 );
 
-  // Define pipe subsets for testing
-  // Pipe 0: ALU operations (ADD, SUB, AND, OR, XOR, SLT, SLTU, SRA, SRL, SLL, LUI, AUIPC)
-  // Pipe 1: Memory operations (LB, LH, LW, LBU, LHU, SB, SH, SW)
-  // Pipe 2: Control operations (JAL, JALR, BEQ, BNE, BLT, BGE, BLTU, BGEU)
-  // Pipe 3: Multiply/Divide operations (MUL, MULH, MULHU, MULHSU, DIV, DIVU, REM, REMU)
-  localparam rv_op_vec [p_num_pipes-1:0] p_pipe_subsets = '{
-    OP_ADD_VEC    | OP_SUB_VEC    | OP_AND_VEC    | OP_OR_VEC     |
-    OP_XOR_VEC    | OP_SLT_VEC    | OP_SLTU_VEC   | OP_SRA_VEC    |
-    OP_SRL_VEC    | OP_SLL_VEC    | OP_LUI_VEC    | OP_AUIPC_VEC,
-
-    OP_LB_VEC     | OP_LH_VEC     | OP_LW_VEC     | OP_LBU_VEC    |
-    OP_LHU_VEC    | OP_SB_VEC     | OP_SH_VEC     | OP_SW_VEC,
-
-    OP_JAL_VEC    | OP_JALR_VEC   | OP_BEQ_VEC    | OP_BNE_VEC    |
-    OP_BLT_VEC    | OP_BGE_VEC    | OP_BLTU_VEC   | OP_BGEU_VEC,
-
-    OP_MUL_VEC    | OP_MULH_VEC   | OP_MULHU_VEC  | OP_MULHSU_VEC |
-    OP_DIV_VEC    | OP_DIVU_VEC   | OP_REM_VEC    | OP_REMU_VEC
-  };
-
-  string suite_name = $sformatf("%0d: SSInstRouterTestSuite_%0d_%0d_%0d_%0d_%0d",
-                                p_suite_num, p_num_pipes, p_num_input_lanes,
-                                p_iq_depth, p_seq_num_bits, p_num_iter);
+  string suite_name = $sformatf("%0d: SSInstRouterTestSuite_%0d_%0d",
+                                p_suite_num, p_num_pipes, p_num_input_lanes);
 
   //----------------------------------------------------------------------
   // Setup
@@ -61,483 +40,164 @@ module SSInstRouterTestSuite #(
   //----------------------------------------------------------------------
   // Instantiate design under test
   //----------------------------------------------------------------------
+  // A tag field lets checks confirm the right lane's message actually
+  // reached the right pipe, not just that some message did.
 
-  localparam p_phys_addr_bits = 6;
+  typedef struct packed {
+    logic [3:0] tag;
+  } t_msg;
 
-  rv_uop                      dut_uop     [p_num_input_lanes];
-  logic [p_seq_num_bits-1:0]  dut_seq_num [p_num_input_lanes];
-  logic                       dut_val     [p_num_input_lanes];
+  t_msg dut_in_msg   [p_num_input_lanes];
+  logic dut_chk_pass [p_num_input_lanes];
+  logic dut_iq_rdy   [p_num_pipes];
 
-  logic                              dut_iq_rdy         [p_num_pipes];
-  logic [$clog2(p_iq_depth):0]       dut_iq_avail_slots [p_num_pipes];
+  logic [p_input_lanes_bits-1:0] dut_route_idx        [p_num_pipes];
+  logic                          dut_iq_val           [p_num_pipes];
+  logic [p_pipe_bits-1:0]        dut_lane_to_pipe_map [p_num_input_lanes];
 
-  logic [p_input_lanes_bits-1:0]     dut_iq_route_idx [p_num_pipes];
-  logic                              dut_iq_val       [p_num_pipes];
-  logic                              dut_xfer         [p_num_input_lanes];
-
-  CommitNotif #(
-    .p_seq_num_bits   (p_seq_num_bits),
-    .p_phys_addr_bits (p_phys_addr_bits)
-  ) commit_notif [p_num_be_lanes] ();
+  t_msg dut_iq_msg      [p_num_pipes];
+  logic dut_iq_ins_try  [p_num_pipes];
+  logic dut_dispatch_go [p_num_input_lanes];
 
   SSInstRouter #(
+    .t_msg             (t_msg),
     .p_num_pipes       (p_num_pipes),
-    .p_pipe_subsets    (p_pipe_subsets),
-    .p_num_input_lanes (p_num_input_lanes),
-    .p_input_lanes_bits (p_input_lanes_bits),
-    .p_iq_depth        (p_iq_depth),
-    .p_seq_num_bits    (p_seq_num_bits),
-    .p_num_iter        (p_num_iter)
+    .p_num_input_lanes (p_num_input_lanes)
   ) dut (
-    .clk            (clk),
-    .rst            (rst),
-    .uop            (dut_uop),
-    .seq_num        (dut_seq_num),
-    .val            (dut_val),
-    .iq_rdy         (dut_iq_rdy),
-    .iq_avail_slots (dut_iq_avail_slots),
-    .iq_route_idx   (dut_iq_route_idx),
-    .iq_val         (dut_iq_val),
-    .xfer           (dut_xfer),
-    .commit         (commit_notif)
+    .in_msg           (dut_in_msg),
+    .chk_pass         (dut_chk_pass),
+    .iq_rdy           (dut_iq_rdy),
+    .route_idx        (dut_route_idx),
+    .iq_val           (dut_iq_val),
+    .lane_to_pipe_map (dut_lane_to_pipe_map),
+    .iq_msg           (dut_iq_msg),
+    .iq_ins_try       (dut_iq_ins_try),
+    .dispatch_go      (dut_dispatch_go)
   );
 
   //----------------------------------------------------------------------
   // Helper tasks
   //----------------------------------------------------------------------
 
-  task set_inputs(
-    input rv_uop                     uop     [p_num_input_lanes],
-    input logic [p_seq_num_bits-1:0] seq_num [p_num_input_lanes],
-    input logic                      val     [p_num_input_lanes]
-  );
-    for (int i = 0; i < p_num_input_lanes; i++) begin
-      dut_uop[i]     = uop[i];
-      dut_seq_num[i] = seq_num[i];
-      dut_val[i]     = val[i];
-    end
+  // Sets up a 1:1 route (pipe i <- lane i, lane i -> pipe i), which is
+  // all that matters for exercising the mux -- the actual matching
+  // policy is SSInstMapper's job, not this module's.
+  task set_identity_route();
+    for (int i = 0; i < p_num_input_lanes; i++)
+      dut_in_msg[i].tag = 4'(i);
+    for (int i = 0; i < p_num_pipes; i++)
+      dut_route_idx[i] = p_input_lanes_bits'(i % p_num_input_lanes);
+    for (int i = 0; i < p_num_input_lanes; i++)
+      dut_lane_to_pipe_map[i] = p_pipe_bits'(i % p_num_pipes);
   endtask
 
-  task set_iq_state(
-    input logic                        rdy         [p_num_pipes],
-    input logic [$clog2(p_iq_depth):0] avail_slots [p_num_pipes]
-  );
-    for (int i = 0; i < p_num_pipes; i++) begin
-      dut_iq_rdy[i]         = rdy[i];
-      dut_iq_avail_slots[i] = avail_slots[i];
-    end
-  endtask
-
-  task check_route(
-    input logic [p_input_lanes_bits-1:0] exp_route_idx [p_num_pipes],
-    input logic                          exp_iq_val    [p_num_pipes],
-    input logic                          exp_xfer      [p_num_input_lanes]
+  task check(
+    input logic exp_iq_val      [p_num_pipes],
+    input logic exp_iq_ins_try  [p_num_pipes],
+    input logic exp_dispatch_go [p_num_input_lanes]
   );
     #1; // Let combinational logic settle
     for (int i = 0; i < p_num_pipes; i++) begin
-      `CHECK_EQ(dut_iq_val[i], exp_iq_val[i]);
+      `CHECK_EQ(dut_iq_ins_try[i], exp_iq_ins_try[i]);
       if (exp_iq_val[i]) begin
-        `CHECK_EQ(dut_iq_route_idx[i], exp_route_idx[i]);
+        `CHECK_EQ(dut_iq_msg[i].tag, dut_in_msg[dut_route_idx[i]].tag);
       end
     end
     for (int i = 0; i < p_num_input_lanes; i++) begin
-      `CHECK_EQ(dut_xfer[i], exp_xfer[i]);
+      `CHECK_EQ(dut_dispatch_go[i], exp_dispatch_go[i]);
     end
   endtask
 
   //----------------------------------------------------------------------
-  // Commit Notification
+  // test_case_mux
   //----------------------------------------------------------------------
+  // The routed message at each pipe is the input message from whatever
+  // lane route_idx points at, regardless of chk_pass/iq_val/iq_rdy.
 
-  typedef struct packed {
-    logic                 [31:0] pc;
-    logic   [p_seq_num_bits-1:0] seq_num;
-    logic                  [4:0] waddr;
-    logic                 [31:0] wdata;
-    logic                        wen;
-    logic [p_phys_addr_bits-1:0] ppreg;
-  } t_commit_msg;
+  task test_case_mux();
+    t.test_case_begin( "test_case_mux" );
+    if( !t.run_test ) return;
 
-  t_commit_msg commit_msg     [p_num_be_lanes];
-  logic        commit_msg_val [p_num_be_lanes];
-  
-  genvar i;
-  generate
-    for( i = 0; i < p_num_be_lanes; i++ ) begin
-      assign commit_notif[i].pc      = commit_msg[i].pc;
-      assign commit_notif[i].seq_num = commit_msg[i].seq_num;
-      assign commit_notif[i].waddr   = commit_msg[i].waddr;
-      assign commit_notif[i].wdata   = commit_msg[i].wdata;
-      assign commit_notif[i].wen     = commit_msg[i].wen;
-      assign commit_notif[i].ppreg   = commit_msg[i].ppreg;
-      assign commit_notif[i].val     = commit_msg_val[i];
-    end
-  endgenerate
+    set_identity_route();
+    for (int i = 0; i < p_num_input_lanes; i++) dut_chk_pass[i] = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       dut_iq_rdy[i]   = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       dut_iq_val[i]   = 1'b1;
 
-  logic                 [31:0] unused_commit_pc    [p_num_be_lanes];
-  logic                  [4:0] unused_commit_waddr [p_num_be_lanes];
-  logic                 [31:0] unused_commit_wdata [p_num_be_lanes];
-  logic                        unused_commit_wen   [p_num_be_lanes];
-
-  generate
-    for( i = 0; i < p_num_be_lanes; i++ ) begin
-      assign unused_commit_pc[i]    = commit_notif[i].pc;
-      assign unused_commit_waddr[i] = commit_notif[i].waddr;
-      assign unused_commit_wdata[i] = commit_notif[i].wdata;
-      assign unused_commit_wen[i]   = commit_notif[i].wen;
-    end
-  endgenerate
-
-  TestMPub #( 
-    .t_msg    (t_commit_msg),
-    .p_num_msgs (p_num_be_lanes)
-  ) commit_pub (
-    .msg (commit_msg),
-    .val (commit_msg_val),
-    .*
-  );
-
-  t_commit_msg msg_to_commit_pub     [p_num_be_lanes];
-  logic        msg_to_commit_pub_val [p_num_be_lanes];
-
-  task commit(
-    input logic                 [31:0] pc      [p_num_be_lanes],
-    input logic   [p_seq_num_bits-1:0] seq_num [p_num_be_lanes],
-    input logic                  [4:0] waddr   [p_num_be_lanes],
-    input logic                 [31:0] wdata   [p_num_be_lanes],
-    input logic                        wen     [p_num_be_lanes],
-    input logic [p_phys_addr_bits-1:0] ppreg   [p_num_be_lanes],
-    input logic                        val     [p_num_be_lanes]
-  );
-    for( int j = 0; j < p_num_be_lanes; j++ ) begin
-      msg_to_commit_pub[j].seq_num = seq_num[j];
-      msg_to_commit_pub[j].pc      = pc[j];
-      msg_to_commit_pub[j].waddr   = waddr[j];
-      msg_to_commit_pub[j].wdata   = wdata[j];
-      msg_to_commit_pub[j].wen     = wen[j];
-      msg_to_commit_pub[j].ppreg   = ppreg[j];
-      msg_to_commit_pub_val[j]     = val[j];
+    #1;
+    for (int i = 0; i < p_num_pipes; i++) begin
+      `CHECK_EQ(dut_iq_msg[i].tag, dut_in_msg[dut_route_idx[i]].tag);
     end
 
-    commit_pub.pub( msg_to_commit_pub, msg_to_commit_pub_val );
+    t.test_case_end();
   endtask
 
   //----------------------------------------------------------------------
-  // test_case_single_instruction
+  // test_case_ins_try_gating
   //----------------------------------------------------------------------
-  // Test routing a single instruction to a compatible pipe
+  // iq_ins_try[pipe] = chk_pass[routed lane] & iq_val[pipe]
 
-  task test_case_single_instruction();
-    t.test_case_begin( "test_case_single_instruction" );
+  task test_case_ins_try_gating();
+    logic exp_iq_val      [p_num_pipes];
+    logic exp_iq_ins_try  [p_num_pipes];
+    logic exp_dispatch_go [p_num_input_lanes];
+
+    t.test_case_begin( "test_case_ins_try_gating" );
     if( !t.run_test ) return;
 
-    // Test 1: Single ADD instruction -> should go to Pipe 0 (ALU)
-    set_inputs(
-      '{OP_ADD, OP_ADD, OP_ADD, OP_ADD},  // Only lane 0 valid
-      '{p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0)},
-      '{1'b1, 1'b0, 1'b0, 1'b0}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{p_input_lanes_bits'(0), 'x, 'x, 'x},  // Pipe 0 gets lane 0
-      '{1'b1, 1'b0, 1'b0, 1'b0},  // Only pipe 0 has instruction
-      '{1'b1, 1'b0, 1'b0, 1'b0}   // Only lane 0 transferred
-    );
+    set_identity_route();
+    for (int i = 0; i < p_num_input_lanes; i++) dut_chk_pass[i] = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       dut_iq_rdy[i]   = 1'b1;
 
-    // Test 2: Single MUL instruction -> should go to Pipe 3 (MUL/DIV)
-    set_inputs(
-      '{OP_MUL, OP_MUL, OP_MUL, OP_MUL},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0)},
-      '{1'b0, 1'b1, 1'b0, 1'b0}  // Lane 1 valid
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{'x, 'x, 'x, p_input_lanes_bits'(1)},  // Pipe 3 gets lane 1
-      '{1'b0, 1'b0, 1'b0, 1'b1},
-      '{1'b0, 1'b1, 1'b0, 1'b0}
-    );
+    // iq_val low on pipe 0 blocks its iq_ins_try even though chk_pass
+    // is high on the lane it's routed from.
+    for (int i = 0; i < p_num_pipes; i++)
+      dut_iq_val[i] = (i != 0);
 
-    // Test 3: Single LW instruction -> should go to Pipe 1 (MEM)
-    set_inputs(
-      '{OP_LW, OP_LW, OP_LW, OP_LW},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0)},
-      '{1'b0, 1'b0, 1'b1, 1'b0}  // Lane 2 valid
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{'x, p_input_lanes_bits'(2), 'x, 'x},  // Pipe 1 gets lane 2
-      '{1'b0, 1'b1, 1'b0, 1'b0},
-      '{1'b0, 1'b0, 1'b1, 1'b0}
-    );
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_val[i]      = (i != 0);
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_ins_try[i]  = (i != 0);
+    for (int i = 0; i < p_num_input_lanes; i++) exp_dispatch_go[i] = 1'b1;
+    check( exp_iq_val, exp_iq_ins_try, exp_dispatch_go );
 
-    // Test 4: Single BNE instruction -> should go to Pipe 2 (CTRL)
-    set_inputs(
-      '{OP_BNE, OP_BNE, OP_BNE, OP_BNE},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0)},
-      '{1'b0, 1'b0, 1'b0, 1'b1}  // Lane 3 valid
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{'x, 'x, p_input_lanes_bits'(3), 'x},  // Pipe 2 gets lane 3
-      '{1'b0, 1'b0, 1'b1, 1'b0},
-      '{1'b0, 1'b0, 1'b0, 1'b1}
-    );
+    // chk_pass low on lane 0 blocks iq_ins_try on whichever pipe it's
+    // routed to (pipe 0, under the identity route).
+    for (int i = 0; i < p_num_pipes; i++) dut_iq_val[i] = 1'b1;
+    for (int i = 0; i < p_num_input_lanes; i++)
+      dut_chk_pass[i] = (i != 0);
+
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_val[i]      = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_ins_try[i]  = (i != 0);
+    for (int i = 0; i < p_num_input_lanes; i++) exp_dispatch_go[i] = (i != 0);
+    check( exp_iq_val, exp_iq_ins_try, exp_dispatch_go );
 
     t.test_case_end();
   endtask
 
   //----------------------------------------------------------------------
-  // test_case_non_conflicting
+  // test_case_dispatch_go_gating
   //----------------------------------------------------------------------
-  // Test routing multiple non-conflicting instructions
+  // dispatch_go[lane] = chk_pass[lane] & iq_rdy[lane's matched pipe]
 
-  task test_case_non_conflicting();
-    t.test_case_begin( "test_case_non_conflicting" );
+  task test_case_dispatch_go_gating();
+    logic exp_iq_val      [p_num_pipes];
+    logic exp_iq_ins_try  [p_num_pipes];
+    logic exp_dispatch_go [p_num_input_lanes];
+
+    t.test_case_begin( "test_case_dispatch_go_gating" );
     if( !t.run_test ) return;
 
-    // All lanes have different instruction types
-    set_inputs(
-      '{OP_ADD, OP_LW, OP_BNE, OP_MUL},  // Different ops
-      '{p_seq_num_bits'(0), p_seq_num_bits'(1), p_seq_num_bits'(2), p_seq_num_bits'(3)},
-      '{1'b1, 1'b1, 1'b1, 1'b1}          // All valid
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{p_input_lanes_bits'(0), p_input_lanes_bits'(1), p_input_lanes_bits'(2), p_input_lanes_bits'(3)},  // Each pipe gets corresponding lane
-      '{1'b1, 1'b1, 1'b1, 1'b1},  // All pipes receive instruction
-      '{1'b1, 1'b1, 1'b1, 1'b1}   // All lanes transferred
-    );
+    set_identity_route();
+    for (int i = 0; i < p_num_input_lanes; i++) dut_chk_pass[i] = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       dut_iq_val[i]   = 1'b1;
 
-    t.test_case_end();
-  endtask
+    // iq_rdy low on pipe 0 blocks dispatch_go on whichever lane maps to
+    // it (lane 0, under the identity map).
+    for (int i = 0; i < p_num_pipes; i++)
+      dut_iq_rdy[i] = (i != 0);
 
-  //----------------------------------------------------------------------
-  // test_case_age_priority
-  //----------------------------------------------------------------------
-  // Test that older instructions get priority when conflicting
-
-  task test_case_age_priority();
-    t.test_case_begin( "test_case_age_priority" );
-    if( !t.run_test ) return;
-
-    // Two ADD instructions competing for Pipe 0 (ALU)
-    // Lane 0: seq_num = 5 (newer)
-    // Lane 1: seq_num = 3 (older) <- should win
-    set_inputs(
-      '{OP_ADD, OP_ADD, OP_LW, OP_MUL},
-      '{p_seq_num_bits'(5), p_seq_num_bits'(3), p_seq_num_bits'(4), p_seq_num_bits'(6)},
-      '{1'b1, 1'b1, 1'b1, 1'b1}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-
-    // Expected behavior:
-    // Iteration 1: Pipe 0 grants to lane 1 (older), pipe 1 grants to lane 2, pipe 3 grants to lane 3
-    // After iteration 1, lane 0 is unmatched (lost contention to lane 1)
-    // Iteration 2: No more matches (lane 0 wants pipe 0 which is already matched)
-    check_route(
-      '{p_input_lanes_bits'(1), p_input_lanes_bits'(2), 'x, p_input_lanes_bits'(3)},  // Pipe 0 gets lane 1, pipe 1 gets lane 2, pipe 3 gets lane 3
-      '{1'b1, 1'b1, 1'b0, 1'b1},  // Pipes 0,1,3 receive instructions, pipe 2 does not
-      '{1'b0, 1'b1, 1'b1, 1'b1}   // Lanes 1,2,3 transfer, lane 0 does not (lost contention)
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_slot_priority
-  //----------------------------------------------------------------------
-  // Test that pipes with more available slots get priority
-
-  task test_case_slot_priority();
-    t.test_case_begin( "test_case_slot_priority" );
-    if( !t.run_test ) return;
-
-    // One ADD instruction that could go to Pipe 0
-    // But if we had multiple pipes supporting ADD, it should prefer
-    // the one with more slots. For this test, we just verify routing works.
-    set_inputs(
-      '{OP_ADD, OP_ADD, OP_ADD, OP_ADD},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0), p_seq_num_bits'(0)},
-      '{1'b1, 1'b0, 1'b0, 1'b0}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd2, 4'd8, 4'd5, 4'd3}  // Pipe 1 has most slots but doesn't support ADD
-    );
-    check_route(
-      '{p_input_lanes_bits'(0), 'x, 'x, 'x},  // Still goes to Pipe 0 (only option)
-      '{1'b1, 1'b0, 1'b0, 1'b0},
-      '{1'b1, 1'b0, 1'b0, 1'b0}
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_pipe_not_ready
-  //----------------------------------------------------------------------
-  // Test that instructions aren't routed to non-ready pipes
-
-  task test_case_pipe_not_ready();
-    t.test_case_begin( "test_case_pipe_not_ready" );
-    if( !t.run_test ) return;
-
-    // ADD instruction, but Pipe 0 (ALU) is not ready
-    set_inputs(
-      '{OP_ADD, OP_LW, OP_BNE, OP_MUL},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(1), p_seq_num_bits'(2), p_seq_num_bits'(3)},
-      '{1'b1, 1'b1, 1'b1, 1'b1}
-    );
-    set_iq_state(
-      '{1'b0, 1'b1, 1'b1, 1'b1},  // Pipe 0 not ready
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{'x, p_input_lanes_bits'(1), p_input_lanes_bits'(2), p_input_lanes_bits'(3)},  // Pipe 0 gets nothing
-      '{1'b0, 1'b1, 1'b1, 1'b1},  // Pipe 0 doesn't receive
-      '{1'b0, 1'b1, 1'b1, 1'b1}   // Lane 0 not transferred
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_full_contention
-  //----------------------------------------------------------------------
-  // Test all lanes wanting the same pipe
-
-  task test_case_full_contention();
-    t.test_case_begin( "test_case_full_contention" );
-    if( !t.run_test ) return;
-
-    // All lanes have ADD instructions -> all want Pipe 0
-    set_inputs(
-      '{OP_ADD, OP_SUB, OP_AND, OP_OR},  // All ALU ops
-      '{p_seq_num_bits'(10), p_seq_num_bits'(5), p_seq_num_bits'(15), p_seq_num_bits'(8)},       // Different ages
-      '{1'b1, 1'b1, 1'b1, 1'b1}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-
-    // With p_num_iter=2, we should get 2 matches per cycle max
-    // (limited by single pipe accepting)
-    // Actually, with single output, only 1 can match per iteration
-    // So with 2 iterations, we get 1 match total to Pipe 0
-    // The oldest (seq_num=5, lane 1) should win in iteration 1
-    check_route(
-      '{p_input_lanes_bits'(1), 'x, 'x, 'x},  // Pipe 0 gets oldest (lane 1, seq=5)
-      '{1'b1, 1'b0, 1'b0, 1'b0},
-      '{1'b0, 1'b1, 1'b0, 1'b0}   // Only lane 1 transferred
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_invalid_instructions
-  //----------------------------------------------------------------------
-  // Test with invalid instructions
-
-  task test_case_invalid_instructions();
-    t.test_case_begin( "test_case_invalid_instructions" );
-    if( !t.run_test ) return;
-
-    // Mix of valid and invalid
-    set_inputs(
-      '{OP_ADD, OP_LW, OP_BNE, OP_MUL},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(1), p_seq_num_bits'(2), p_seq_num_bits'(3)},
-      '{1'b1, 1'b0, 1'b1, 1'b0}  // Only lanes 0 and 2 valid
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd8, 4'd8, 4'd8, 4'd8}
-    );
-    check_route(
-      '{p_input_lanes_bits'(0), 'x, p_input_lanes_bits'(2), 'x},
-      '{1'b1, 1'b0, 1'b1, 1'b0},
-      '{1'b1, 1'b0, 1'b1, 1'b0}   // Only valid lanes transferred
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_no_slots_available
-  //----------------------------------------------------------------------
-  // Test behavior when pipes have no available slots
-
-  task test_case_no_slots_available();
-    t.test_case_begin( "test_case_no_slots_available" );
-    if( !t.run_test ) return;
-
-    set_inputs(
-      '{OP_ADD, OP_LW, OP_BNE, OP_MUL},
-      '{p_seq_num_bits'(0), p_seq_num_bits'(1), p_seq_num_bits'(2), p_seq_num_bits'(3)},
-      '{1'b1, 1'b1, 1'b1, 1'b1}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd0, 4'd0, 4'd8, 4'd0}  // Only Pipe 2 has slots
-    );
-    check_route(
-      '{'x, 'x, p_input_lanes_bits'(2), 'x},
-      '{1'b0, 1'b0, 1'b1, 1'b0},  // Only pipe 2 matches (has slots)
-      '{1'b0, 1'b0, 1'b1, 1'b0}   // Only lane 2 transferred
-    );
-
-    t.test_case_end();
-  endtask
-
-  //----------------------------------------------------------------------
-  // test_case_mixed_scenario
-  //----------------------------------------------------------------------
-  // Complex scenario with multiple conflicts and priorities
-
-  task test_case_mixed_scenario();
-    t.test_case_begin( "test_case_mixed_scenario" );
-    if( !t.run_test ) return;
-
-    // Lane 0: ADD (seq=20, newer) -> Pipe 0
-    // Lane 1: SUB (seq=10, older) -> Pipe 0 (should win over lane 0)
-    // Lane 2: LW (seq=15) -> Pipe 1
-    // Lane 3: MUL (seq=12) -> Pipe 3
-    set_inputs(
-      '{OP_ADD, OP_SUB, OP_LW, OP_MUL},
-      '{p_seq_num_bits'(20), p_seq_num_bits'(10), p_seq_num_bits'(15), p_seq_num_bits'(12)},
-      '{1'b1, 1'b1, 1'b1, 1'b1}
-    );
-    set_iq_state(
-      '{1'b1, 1'b1, 1'b1, 1'b1},
-      '{4'd5, 4'd3, 4'd7, 4'd2}  // Different slot counts
-    );
-
-    // Expected: lane 1 wins pipe 0 (older), lanes 2,3 get their pipes
-    // Lane 0 doesn't get matched (lost contention to lane 1)
-    check_route(
-      '{p_input_lanes_bits'(1), p_input_lanes_bits'(2), 'x, p_input_lanes_bits'(3)},  // Pipe 0 gets lane 1, pipe 1 gets lane 2, pipe 3 gets lane 3
-      '{1'b1, 1'b1, 1'b0, 1'b1},  // Pipes 0,1,3 receive instructions, pipe 2 does not
-      '{1'b0, 1'b1, 1'b1, 1'b1}   // Lanes 1,2,3 transfer, lane 0 does not (lost contention)
-    );
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_val[i]      = 1'b1;
+    for (int i = 0; i < p_num_pipes; i++)       exp_iq_ins_try[i]  = 1'b1;
+    for (int i = 0; i < p_num_input_lanes; i++) exp_dispatch_go[i] = (i != 0);
+    check( exp_iq_val, exp_iq_ins_try, exp_dispatch_go );
 
     t.test_case_end();
   endtask
@@ -549,15 +209,9 @@ module SSInstRouterTestSuite #(
   task run_test_suite();
     t.test_suite_begin( suite_name );
 
-    test_case_single_instruction();
-    test_case_non_conflicting();
-    test_case_age_priority();
-    test_case_slot_priority();
-    test_case_pipe_not_ready();
-    test_case_full_contention();
-    test_case_invalid_instructions();
-    test_case_no_slots_available();
-    test_case_mixed_scenario();
+    test_case_mux();
+    test_case_ins_try_gating();
+    test_case_dispatch_go_gating();
   endtask
 
   //----------------------------------------------------------------------
@@ -582,9 +236,6 @@ endmodule
 
 module SSInstRouter_test;
 
-  // Test with different configurations
-
-  // Default config: 4 pipes, 4 lanes, 8-depth IQ, 8-bit seq num, 2 iterations
   SSInstRouterTestSuite suite_1();
 
   int s;

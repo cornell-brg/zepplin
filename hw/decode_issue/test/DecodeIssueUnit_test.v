@@ -656,12 +656,18 @@ module DecodeIssueUnit_test;
     .p_iq_depth          (8),
     .p_F_send_intv_delay (0),
     .p_X_recv_intv_delay (0),
+    // NOTE: a {...} concatenation onto a [p_num_pipes-1:0] (descending)
+    // array parameter assigns the FIRST listed element to the LAST
+    // index, not index 0 (same gotcha as a '{...} positional literal).
+    // Listed in reverse here so pipes 0-3 actually land on p_tinyrv1 and
+    // pipe 4 on OP_MUL_VEC, matching what test_case_1
+    // (recv_pipe[i] = i, for 2 ADD instructions) assumes.
     .p_pipe_subsets      ({
+      OP_MUL_VEC,
       p_tinyrv1,
       p_tinyrv1,
       p_tinyrv1,
-      p_tinyrv1,
-      OP_MUL_VEC
+      p_tinyrv1
     }),
     .p_num_be_lanes      (2)
   ) suite_3();
@@ -674,6 +680,11 @@ module DecodeIssueUnit_test;
     .p_F_send_intv_delay (0),
     .p_X_recv_intv_delay (0),
     .p_pipe_subsets      ({p_tinyrv1}),
+    // test_case_1 sends one instruction per fe lane and expects
+    // recv_pipe[i] = i, i.e. one pipe per lane -- with only 1 pipe here,
+    // the default of 2 fe lanes makes recv() search forever for a
+    // nonexistent pipe 1.
+    .p_num_fe_lanes      (1),
     .p_num_be_lanes      (2)
   ) suite_4();
   DecodeIssueUnitTestSuite #(
@@ -734,6 +745,13 @@ module DecodeIssueUnit_test;
       p_tinyrv1,
       p_tinyrv1
     }),
+    // test_case_1 sends 2 simultaneous ADD instructions (one per fe
+    // lane), each needing its own free physical register (pregs 32 and
+    // 33) -- p_num_phys_regs=33 only has 1 free (preg 32) at reset, so
+    // the second instruction would stall forever waiting for alloc_rdy.
+    // Drop to 1 fe lane so this narrow-regfile config is still exercised
+    // without needing a nonexistent 2nd preg.
+    .p_num_fe_lanes      (1),
     .p_num_be_lanes      (2)
   ) suite_8();
 

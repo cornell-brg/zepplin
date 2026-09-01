@@ -15,6 +15,7 @@ set(V_TEST_FILES
   hw/decode_issue/test/DecodeIssueUnit_test.v
   hw/decode_issue/test/ImmGen_test.v
   hw/decode_issue/test/IssueQueueInOrder_test.v
+  hw/decode_issue/test/SSInstMapper_test.v
   hw/decode_issue/test/SSInstRouter_test.v
   hw/decode_issue/test/SSRenameTable_test.v
   hw/execute/test/ALU_test.v
