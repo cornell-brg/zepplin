@@ -1,0 +1,250 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Further Work &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Microarchitectural Units" href="../../units/units/" />
+    <link rel="prev" title="Configuration and Programming Guide" href="../programming_guide/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Further Work</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fetch-block-alignment-requirement-removal">Fetch Block Alignment Requirement Removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#single-cycle-branch-resolution-latency-requirement-removal">Single-Cycle Branch Resolution Latency Requirement Removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#in-order-loads-and-stores-requirement-removal">In-Order Loads and Stores Requirement Removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#support-for-true-out-of-order-issue">Support for True Out-of-Order Issue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#privileged-isa-support">Privileged ISA Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#formal-verification">Formal Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sequence-number-generator-simplification">Sequence Number Generator Simplification</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../units/units/">Microarchitectural Units</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Further Work</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/overview/todo.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="further-work">
+<h1>Further Work<a class="headerlink" href="#further-work" title="Link to this heading"></a></h1>
+<p>Zeppelin has reached the point of running the full RV32IM ISA in a
+parameterizable superscalar configuration with optional out-of-order issue
+queues, but several known limitations remain. The items below capture the
+main avenues for future work; the project report goes into more detail on
+the motivation and tradeoff for each.</p>
+<section id="fetch-block-alignment-requirement-removal">
+<h2>Fetch Block Alignment Requirement Removal<a class="headerlink" href="#fetch-block-alignment-requirement-removal" title="Link to this heading"></a></h2>
+<p>All instructions in a fetch block currently travel together through both
+the fetch unit and the decode-issue unit. When some lanes can dispatch
+while others cannot (e.g. a structural hazard on the iSLIP crossbar),
+the dispatching lanes are marked <code class="docutils literal notranslate"><span class="pre">DISPATCHED</span></code> in the DIUFifo head and
+the block remains parked until every lane has dispatched or been
+invalidated. The “dead” slots that result are wasted decode-issue
+bandwidth. A more advanced version would let the DIU pull in fresh
+instructions from the fetch unit to refill those slots so that decode
+issue can continue doing useful work without waiting for the slowest
+lane in the current block. This is a substantial change because it
+breaks the invariant that each fetch block has a single source PC and
+contiguous sequence numbers.</p>
+</section>
+<section id="single-cycle-branch-resolution-latency-requirement-removal">
+<h2>Single-Cycle Branch Resolution Latency Requirement Removal<a class="headerlink" href="#single-cycle-branch-resolution-latency-requirement-removal" title="Link to this heading"></a></h2>
+<p>The control-flow execute pipe is forced into bypass-mode (its issue queue
+is purely combinational) so that branches resolve in the cycle after
+decode. This single-cycle latency requirement is what guarantees that no
+speculatively-fetched instructions can move past the DIU before the
+redirect arrives, which in turn means no XU or the WCU itself has to
+listen for squashes.</p>
+<p>The downside is that the control-flow pipe can never benefit from an issue
+queue, and any younger instruction in the same fetch block as an
+unresolved BRX is blocked at the DIU until the BRX dispatches. Removing
+this requirement would require:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The XUs and the WCU all listening to <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code> and squashing
+anything younger than the redirecting instruction</p></li>
+<li><p>The memory XU keeping enough per-request state to drop squashed
+in-flight loads/stores (likely an LSQ in an out-of-order design)</p></li>
+<li><p>Either a control-flow issue queue that can hold partial state, or a
+centralized issue queue (see “True Out-of-Order Issue” below)</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="in-order-loads-and-stores-requirement-removal">
+<h2>In-Order Loads and Stores Requirement Removal<a class="headerlink" href="#in-order-loads-and-stores-requirement-removal" title="Link to this heading"></a></h2>
+<p>The load-store execute unit does not contain a load-store queue, so memory
+ordering is enforced by forcing the memory pipe’s issue queue to the
+in-order variant. Adding a proper LSQ to the LSU would let memory
+operations participate in out-of-order issue and would also be the natural
+place to handle squashes of in-flight memory requests once the single-cycle
+branch resolution requirement is lifted.</p>
+</section>
+<section id="support-for-true-out-of-order-issue">
+<h2>Support for True Out-of-Order Issue<a class="headerlink" href="#support-for-true-out-of-order-issue" title="Link to this heading"></a></h2>
+<p>Out-of-order issue queues exist (<code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code>) and demonstrably win
+on synthetic benchmarks like the <code class="docutils literal notranslate"><span class="pre">oooiq-demo</span></code>, but the per-pipe layout
+limits how often reordering actually happens in real programs. Because
+instructions are routed to a specific pipe’s queue <em>before</em> their source
+operands are known to be ready, one queue can fill up while another
+identical pipe’s queue is idle. To get true out-of-order issue out of the
+hardware, the DIU likely needs to switch to a centralized issue queue
+that is enqueued before pipe mapping and dispatches on dequeue. That
+requires a more intelligent scheduler that can pull non-consecutive
+ready instructions, and likely better compiler support so independent
+instructions land close enough together to benefit.</p>
+</section>
+<section id="privileged-isa-support">
+<h2>Privileged ISA Support<a class="headerlink" href="#privileged-isa-support" title="Link to this heading"></a></h2>
+<p>The current ISA is RV32IM (no exceptions, no privilege modes). For
+operating-system-style workloads, the privileged RISC-V ISA would need
+to be implemented along with the CSRs and their semantics. A useful
+target would be the CSRs needed to run
+<a class="reference external" href="https://github.com/yhzhang0128/egos-2000">EGOS-2000</a>: at minimum
+<code class="docutils literal notranslate"><span class="pre">mtvec</span></code>, <code class="docutils literal notranslate"><span class="pre">mepc</span></code>, <code class="docutils literal notranslate"><span class="pre">mcause</span></code>, <code class="docutils literal notranslate"><span class="pre">mstatus</span></code>, <code class="docutils literal notranslate"><span class="pre">mhartid</span></code>,
+<code class="docutils literal notranslate"><span class="pre">mvendorid</span></code>, <code class="docutils literal notranslate"><span class="pre">mscratch</span></code>, <code class="docutils literal notranslate"><span class="pre">mip</span></code>, <code class="docutils literal notranslate"><span class="pre">mie</span></code>, <code class="docutils literal notranslate"><span class="pre">mtime</span></code>, <code class="docutils literal notranslate"><span class="pre">mtimecmp</span></code>.</p>
+<p>This work is tightly coupled to the squashing changes above, since
+exceptions in the WCU break the “speculation never escapes the DIU”
+invariant in the same way that multi-cycle branch resolution would.</p>
+</section>
+<section id="formal-verification">
+<h2>Formal Verification<a class="headerlink" href="#formal-verification" title="Link to this heading"></a></h2>
+<p>Zeppelin is verified through extensive unit and integration testing,
+including ELF-based golden-reference checks against the FL processor and
+randomized RISC-V instruction tests driven by
+<a class="reference external" href="https://github.com/chipsalliance/riscv-dv">riscv-dv</a>. The next step
+in verification rigor would be replacing (or augmenting) the
+<code class="docutils literal notranslate"><span class="pre">InstTraceNotif</span></code> with the
+<a class="reference external" href="https://github.com/SymbioticEDA/riscv-formal/blob/master/docs/rvfi.md">RVFI interface</a>
+so the design can be formally checked against the RISC-V formal model.</p>
+</section>
+<section id="sequence-number-generator-simplification">
+<h2>Sequence Number Generator Simplification<a class="headerlink" href="#sequence-number-generator-simplification" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SeqNumGen</span></code> currently tracks in-flight sequence numbers with a bitmap
+(<code class="docutils literal notranslate"><span class="pre">seq_num_list</span></code>) so that numbers can be freed in any order. In practice
+numbers are freed on commit, which is in order with respect to the
+sequence-number space, so a head/tail-pointer-based FIFO would suffice
+and would scale as <span class="math notranslate nohighlight">\(\log(N)\)</span> instead of <span class="math notranslate nohighlight">\(N\)</span> for the number
+of sequence numbers. The bitmap is a holdover from when the exact
+semantics of sequence numbers were still being worked out and is worth
+replacing.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../programming_guide/" class="btn btn-neutral float-left" title="Configuration and Programming Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../units/units/" class="btn btn-neutral float-right" title="Microarchitectural Units" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

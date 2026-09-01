@@ -1,0 +1,279 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fetch Unit &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Decode Issue Unit (DIU)" href="../decode_issue_unit/" />
+    <link rel="prev" title="Microarchitectural Units" href="../units/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../units/">Microarchitectural Units</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Fetch Unit (FU)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#address-generator-fetchaddrgen">Address Generator: FetchAddrGen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-flow-redirect-tracker-fetchsquashtracker">Control Flow Redirect Tracker: FetchSquashTracker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#branch-predictor-branchpredictor">Branch Predictor: BranchPredictor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sequence-number-generator-seqnumgen">Sequence Number Generator: SeqNumGen</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../decode_issue_unit/">Decode Issue Unit (DIU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../execute_units/">Execute Units (XU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../writeback_commit_unit/">Writeback Commit Unit (WCU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctrl_flow_unit/">Control Flow Unit (CFU)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../units/">Microarchitectural Units</a></li>
+      <li class="breadcrumb-item active">Fetch Unit</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/units/fetch_unit.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fetch-unit">
+<h1>Fetch Unit<a class="headerlink" href="#fetch-unit" title="Link to this heading"></a></h1>
+<p>The Fetch Unit (<code class="docutils literal notranslate"><span class="pre">FetchUnit</span></code>) is a FIFO-less superscalar fetch unit that
+fetches aligned blocks of <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> instructions per cycle and
+supports control-flow redirects from downstream units. As shown in the
+diagram below, the fetch unit sends a single wide memory request per cycle
+and the response data is unpacked into <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> instruction lanes
+that flow directly to the <code class="docutils literal notranslate"><span class="pre">F__DIntf</span></code> with no internal buffering. When a
+control-flow redirect occurs, the unit tracks all in-flight requests via
+<code class="docutils literal notranslate"><span class="pre">num_to_squash</span></code> and drops them as they return from memory, then restarts
+fetching from the redirect target address. The redirect target is decomposed
+into a fetch-block base address (aligned to <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> words) and a
+lane offset within that block, which determines which lanes in the first
+post-redirect fetch block carry valid instructions.</p>
+<p>Each lane carries a 2-bit <code class="docutils literal notranslate"><span class="pre">inst_status</span></code> field (<code class="docutils literal notranslate"><span class="pre">READY</span></code> or <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>) on
+the <code class="docutils literal notranslate"><span class="pre">F__DIntf</span></code> interface. Lanes with valid instruction data are marked
+<code class="docutils literal notranslate"><span class="pre">READY</span></code>; lanes that should be ignored (e.g. before the restart offset or
+during a stale-response drop) are marked <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>. The downstream
+decode-issue unit uses this status to skip invalid lanes without additional
+checking. Each lane also carries a <code class="docutils literal notranslate"><span class="pre">predicted_taken</span></code> flag (described below)
+that the decode-issue unit uses to suppress redirect publication for
+correctly-predicted JAL instructions.</p>
+<a class="bottompadding reference internal image-reference" href="../../_images/fetch-unit.drawio.png"><img alt="A picture of the Fetch Unit" class="align-center bottompadding" src="../../_images/fetch-unit.drawio.png" style="width: 80%;" />
+</a>
+<section id="address-generator-fetchaddrgen">
+<h2>Address Generator: FetchAddrGen<a class="headerlink" href="#address-generator-fetchaddrgen" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">FetchAddrGen</span></code> module maintains the current fetch-block base address
+and produces the memory request address and valid signal. It handles three
+address sources in priority order: (1) a control-flow redirect from the
+<code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code> interface, which always takes priority and computes a
+block-aligned base address from the redirect target; (2) a branch-predictor
+redirect (when <code class="docutils literal notranslate"><span class="pre">p_enable_branch_pred</span></code> is set), which steers the next fetch
+to the predicted target; and (3) sequential fetch, which advances the base
+address by <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span> <span class="pre">*</span> <span class="pre">4</span></code> bytes after each completed request.</p>
+<p>For redirects, <code class="docutils literal notranslate"><span class="pre">FetchAddrGen</span></code> decomposes the redirect address into a
+fetch-block base address and a <code class="docutils literal notranslate"><span class="pre">ctrl_flow_lane_offset</span></code> indicating which
+lane within the block the redirect corresponds to. For not-taken
+mispredictions, the module redirects to <code class="docutils literal notranslate"><span class="pre">PC</span> <span class="pre">+</span> <span class="pre">4</span></code> (the fall-through
+address) instead of the branch target. The request-valid signal is gated by
+the <code class="docutils literal notranslate"><span class="pre">num_in_flight</span></code> and <code class="docutils literal notranslate"><span class="pre">num_to_squash</span></code> counts to prevent exceeding the
+maximum number of in-flight requests.</p>
+</section>
+<section id="control-flow-redirect-tracker-fetchsquashtracker">
+<h2>Control Flow Redirect Tracker: FetchSquashTracker<a class="headerlink" href="#control-flow-redirect-tracker-fetchsquashtracker" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">FetchSquashTracker</span></code> tracks the number of in-flight fetch requests and
+the number of stale responses that must be drained after a control-flow
+redirect. It maintains two counters: <code class="docutils literal notranslate"><span class="pre">num_in_flight</span></code> (incremented on each
+memory request, decremented on each consumed response) and <code class="docutils literal notranslate"><span class="pre">num_to_squash</span></code>
+(set to the current in-flight count on a redirect, decremented as stale
+responses arrive). The <code class="docutils literal notranslate"><span class="pre">should_drop</span></code> output is asserted when a redirect is
+active or stale responses remain, causing the datapath to discard incoming
+memory responses.</p>
+<p>After a redirect, the first valid fetch block may start at a mid-block lane.
+The <code class="docutils literal notranslate"><span class="pre">needs_ctrl_flow_restart</span></code> flag tracks whether the next good block
+needs lane masking, and <code class="docutils literal notranslate"><span class="pre">ctrl_flow_restart_offset</span></code> records which lane to
+start from. These signals persist until the first valid fetch block is
+transferred to decode, after which all subsequent fetch blocks use all
+lanes normally.</p>
+</section>
+<section id="branch-predictor-branchpredictor">
+<h2>Branch Predictor: BranchPredictor<a class="headerlink" href="#branch-predictor-branchpredictor" title="Link to this heading"></a></h2>
+<p>When the <code class="docutils literal notranslate"><span class="pre">p_enable_branch_pred</span></code> parameter is set, the fetch unit
+instantiates a <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> that predicts whether a fetch block
+contains a taken branch and, if so, redirects the next fetch to the
+predicted target. The predictor uses a set-associative Branch Target
+Buffer (BTB) with <code class="docutils literal notranslate"><span class="pre">p_btb_entries</span></code> entries and <code class="docutils literal notranslate"><span class="pre">p_btb_ways</span></code> ways
+(<code class="docutils literal notranslate"><span class="pre">p_btb_ways=1</span></code> gives direct-mapped, <code class="docutils literal notranslate"><span class="pre">p_btb_ways=p_btb_entries</span></code> gives
+fully-associative). Each BTB entry stores a tag, target address, 2-bit
+saturating counter for direction prediction, and the lane index of the
+branch within the fetch block. FIFO replacement is used when all ways in
+a set are occupied.</p>
+<p>On each fetch request, the predictor looks up the BTB using the fetch-block
+base address. If a matching entry is found and the counter’s MSB is set
+(predicting taken), the predictor asserts <code class="docutils literal notranslate"><span class="pre">redirect_val</span></code> and drives
+<code class="docutils literal notranslate"><span class="pre">redirect_target</span></code> with the BTB’s stored target, causing <code class="docutils literal notranslate"><span class="pre">FetchAddrGen</span></code>
+to steer the next fetch to the predicted address. The <code class="docutils literal notranslate"><span class="pre">pred_taken</span></code> and
+<code class="docutils literal notranslate"><span class="pre">branch_lane</span></code> signals are pushed into a prediction FIFO alongside the
+fetch request so that the correct prediction metadata accompanies the
+memory response when it returns.</p>
+<p>On the response side, the prediction FIFO is popped, and lanes beyond the
+predicted branch lane are marked inactive (<code class="docutils literal notranslate"><span class="pre">lane_active</span></code> is deasserted),
+preventing the fetch unit from sending instructions that follow a
+predicted-taken branch. The <code class="docutils literal notranslate"><span class="pre">predicted_taken</span></code> flag on the <code class="docutils literal notranslate"><span class="pre">F__DIntf</span></code> is
+set for the branch lane itself, allowing the decode-issue unit to recognize
+that the JAL was predicted and suppress a redundant redirect.</p>
+<p>Updates to the BTB arrive via the <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code> interface when a
+branch or JAL resolves at execute time. The <code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code> signal
+triggers the update, which increments or decrements the saturating counter
+for existing entries, or allocates a new entry (initializing the counter to
+weakly-taken or weakly-not-taken) on a miss.</p>
+</section>
+<section id="sequence-number-generator-seqnumgen">
+<h2>Sequence Number Generator: SeqNumGen<a class="headerlink" href="#sequence-number-generator-seqnumgen" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SeqNumGen</span></code> module manages a circular buffer of <code class="docutils literal notranslate"><span class="pre">2^p_seq_num_bits</span></code>
+sequence numbers using a head and tail pointer. Each cycle, it can allocate
+up to <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> consecutive sequence numbers from the head pointer
+for newly fetched instructions. Committed instructions are marked free via
+the commit interface, and the tail pointer advances in-order over
+consecutive free entries, reclaiming up to <code class="docutils literal notranslate"><span class="pre">p_reclaim_width</span></code> entries per
+cycle. On a control-flow redirect, all sequence numbers younger than the
+redirect sequence number are freed and the head pointer resets to
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow.seq_num</span> <span class="pre">+</span> <span class="pre">1</span></code>. Allocation can occur simultaneously with a
+redirect – the new sequence numbers start from the post-redirect head
+pointer position.</p>
+<p>When the redirect target address is aligned to the base of a fetch block
+(i.e. the lane offset is zero), the restart is straightforward. The fetch
+unit begins requesting the aligned fetch block starting at the redirect
+target, and since the target corresponds to lane 0, all lanes in the first
+post-redirect fetch block contain valid instructions. The
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_restart_offset</span></code> is zero, so <code class="docutils literal notranslate"><span class="pre">D_inst_status</span></code> and
+<code class="docutils literal notranslate"><span class="pre">alloc_rdy</span></code> are asserted for every lane, and each lane receives a
+sequence-number allocation as normal.</p>
+<p>When the redirect target address falls in the middle of a fetch block
+(i.e. the lane offset is nonzero), the fetch unit still fetches the entire
+aligned block but must invalidate the lanes before the target. The
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_restart_offset</span></code> register captures which lane the redirect
+target corresponds to, computed as the word offset within the fetch block.
+On the first post-redirect fetch block, <code class="docutils literal notranslate"><span class="pre">D_inst_status</span></code> is set to
+<code class="docutils literal notranslate"><span class="pre">READY</span></code> and <code class="docutils literal notranslate"><span class="pre">alloc_rdy</span></code> is asserted only for lanes at or above
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_restart_offset</span></code> – earlier lanes are marked <code class="docutils literal notranslate"><span class="pre">INVALID</span></code> and
+do not receive sequence-number allocations. The <code class="docutils literal notranslate"><span class="pre">needs_ctrl_flow_restart</span></code>
+flag ensures this partial-block behavior persists until the first valid
+fetch block is transferred to decode, after which all subsequent fetch
+blocks use all lanes normally.</p>
+<p>For more on the semantics of sequence numbers and their use in age
+comparisons throughout the rest of the pipeline, see
+<a class="reference internal" href="../../uarch/seq_nums/"><span class="doc">Sequence Numbers</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../units/" class="btn btn-neutral float-left" title="Microarchitectural Units" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../decode_issue_unit/" class="btn btn-neutral float-right" title="Decode Issue Unit (DIU)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

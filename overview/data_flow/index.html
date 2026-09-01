@@ -1,0 +1,240 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Flow in the Processor &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Processor Overview" href="../overview/" />
+    <link rel="prev" title="Design Motivation and Philosophy" href="../motivation/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Flow in the Processor</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#latency-insensitive-interfaces">Latency-Insensitive Interfaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notifications">Notifications</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../units/units/">Microarchitectural Units</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data Flow in the Processor</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/overview/data_flow.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-flow-in-the-processor">
+<h1>Data Flow in the Processor<a class="headerlink" href="#data-flow-in-the-processor" title="Link to this heading"></a></h1>
+<style> .zeppelin-blue {color:#2094F3; font-weight:bold; font-size:16px} </style>
+<style> .zeppelin-green {color:#97D077; font-weight:bold; font-size:16px} </style><p>Zeppelin is composed of several units connected by a small set of standardized
+SystemVerilog interfaces. There are two classes of interface:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Latency-Insensitive</strong> interfaces carry information forward through the
+pipeline. They include both <code class="docutils literal notranslate"><span class="pre">val</span></code> and <code class="docutils literal notranslate"><span class="pre">rdy</span></code> signals, so a downstream
+unit can back-pressure its producer when it isn’t ready to accept new
+data. Because the protocol is symmetric, latency-insensitive interfaces
+only flow forward (never from a later unit back to an earlier one),
+which avoids combinational deadlocks. Instructions follow these paths
+throughout their lifetime as they move between units. In Zeppelin’s
+diagrams they appear as <span class="zeppelin-blue">blue arrows</span>, with bidirectional
+arrow heads indicating the <code class="docutils literal notranslate"><span class="pre">val/rdy</span></code> control flow.</p></li>
+<li><p><strong>Latency-Sensitive</strong> interfaces (also called <strong>notifications</strong>) carry
+information that may flow in any direction, including backward through
+the pipeline. They have only a <code class="docutils literal notranslate"><span class="pre">val</span></code> signal – no <code class="docutils literal notranslate"><span class="pre">rdy</span></code>, no
+back-pressure – which is what makes them safe to wire backward without
+risking a combinational loop. Notifications are used for signals that
+must be acted on the same cycle they fire, such as writebacks, commits,
+and control-flow redirects. In Zeppelin’s diagrams they appear as
+<span class="zeppelin-green">green arrows</span>, with unidirectional arrow heads
+indicating the one-way signal flow.</p></li>
+</ul>
+</div></blockquote>
+<section id="latency-insensitive-interfaces">
+<h2>Latency-Insensitive Interfaces<a class="headerlink" href="#latency-insensitive-interfaces" title="Link to this heading"></a></h2>
+<p>Latency-insensitive interfaces are named <code class="docutils literal notranslate"><span class="pre">&lt;src&gt;__&lt;dest&gt;Intf</span></code> to indicate
+which units they connect:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">F__DIntf</span></code>: <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> parallel interfaces from the fetch unit
+to the decode-issue unit, carrying the raw 32-bit instruction word, PC,
+sequence number, per-lane <code class="docutils literal notranslate"><span class="pre">inst_status</span></code>, and (when branch prediction
+is enabled) a <code class="docutils literal notranslate"><span class="pre">predicted_taken</span></code> flag</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">D__XIntf</span></code>: <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> parallel interfaces from the decode-issue
+unit to the execute units, carrying the decoded micro-op, two source
+operand values, the destination physical register, the previous mapping
+of that architectural register, the immediate / third operand, the PC,
+sequence number, and prediction flag</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">X__WIntf</span></code>: <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> parallel interfaces from each execute unit
+to the writeback-commit unit, carrying the write data and address, the
+write-enable, the physical register specifiers, the PC, and sequence
+number</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MemIntf</span></code>: the memory request/response interface used for the
+instruction memory (driven by the fetch unit) and the data memory
+(driven by the load-store execute unit). Reads are signaled by
+<code class="docutils literal notranslate"><span class="pre">strb</span> <span class="pre">=</span> <span class="pre">0</span></code>; sub-word stores are issued as word-aligned writes with
+the appropriate byte strobes; all transactions are tagged with an
+<code class="docutils literal notranslate"><span class="pre">opaque</span></code> field</p></li>
+</ul>
+</div></blockquote>
+<p>All latency-insensitive interfaces in the toplevel pass through optional
+simulation-only delay stages (<code class="docutils literal notranslate"><span class="pre">F__DDelay</span></code>, <code class="docutils literal notranslate"><span class="pre">D__XDelay</span></code>, <code class="docutils literal notranslate"><span class="pre">X__WDelay</span></code>)
+that can inject periodic back-pressure, useful for stressing the
+interfaces during unit testing.</p>
+</section>
+<section id="notifications">
+<h2>Notifications<a class="headerlink" href="#notifications" title="Link to this heading"></a></h2>
+<p>Notifications don’t require a single source and/or destination, and are
+therefore named according to their semantics. Zeppelin uses the following
+notifications:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Complete</strong> notifications (<code class="docutils literal notranslate"><span class="pre">CompleteNotif</span></code>) communicate when an
+execute unit’s result is selected by the WCU’s arbiter and written
+into the register file. The WCU drives <code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> instances
+of this notification to the DIU so that dependent instructions in
+the issue queues can be marked ready as early as possible – before
+the completing instruction has even drained through the WCU’s
+internal decoupling FIFO.</p></li>
+<li><p><strong>Commit</strong> notifications (<code class="docutils literal notranslate"><span class="pre">CommitNotif</span></code>) communicate when an
+instruction retires in program order. The WCU drives
+<code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> of them to both the DIU (to free the previous
+physical register mapping and update the architectural state) and
+the fetch unit (to release the sequence number for reuse, advance
+the age tracker, and reclaim BTB entries on resolved branches).</p></li>
+<li><p><strong>Control-flow</strong> notifications (<code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code>) communicate
+redirects that must invalidate younger in-flight instructions. They
+can originate at either the DIU (for JAL/JALR) or the control-flow
+execute unit (for resolved conditional branches), and they carry the
+redirecting instruction’s sequence number, source PC, target, taken
+bit, and a <code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code> for the branch predictor. Because two
+different sources can fire in the same cycle, the <strong>Control Flow
+Unit</strong> (CFU) arbitrates between them using <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code> and forwards
+the older redirect to the fetch unit and back to the DIU.</p></li>
+<li><p><strong>Instruction trace</strong> notifications (<code class="docutils literal notranslate"><span class="pre">InstTraceNotif</span></code>) drive
+external verification logic. They carry the same fields as
+<code class="docutils literal notranslate"><span class="pre">CommitNotif</span></code> and are used by the integration tests to compare
+committed instructions against the FL processor’s golden reference.</p></li>
+<li><p><strong>Instruction check</strong> notifications (<code class="docutils literal notranslate"><span class="pre">InstCheckIntf</span></code>) thread the
+four cascaded <code class="docutils literal notranslate"><span class="pre">InstCheck</span></code> stages in the DIU; each stage takes a
+<code class="docutils literal notranslate"><span class="pre">pass</span></code> from its predecessor, performs its own check, and produces
+<code class="docutils literal notranslate"><span class="pre">pass</span></code> and <code class="docutils literal notranslate"><span class="pre">invalidate</span></code> outputs for the next stage.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../motivation/" class="btn btn-neutral float-left" title="Design Motivation and Philosophy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../overview/" class="btn btn-neutral float-right" title="Processor Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

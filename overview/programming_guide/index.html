@@ -1,0 +1,567 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration and Programming Guide &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Further Work" href="../todo/" />
+    <link rel="prev" title="Dependencies" href="../dependencies/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies/">Dependencies</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration and Programming Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-zeppelin-parameters">Configuring Zeppelin Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setting-parameters-globally-via-d-macro-overrides">Setting Parameters Globally (via <code class="docutils literal notranslate"><span class="pre">-D</span></code> Macro Overrides)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-parameters-per-instantiation">Setting Parameters per Instantiation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-and-removing-execute-units">Adding and Removing Execute Units</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#changing-the-count-of-an-existing-xu">Changing the Count of an Existing XU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-a-new-xu-type-e-g-an-accelerator">Adding a New XU Type (e.g. an Accelerator)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-programs-for-zeppelin">Writing Programs for Zeppelin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#program-layout">Program Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-zeppelin-runtime">The Zeppelin Runtime</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-map-and-exit-convention">Memory Map and Exit Convention</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-and-running">Building and Running</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-tips">Performance Tips</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../units/units/">Microarchitectural Units</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration and Programming Guide</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/overview/programming_guide.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration-and-programming-guide">
+<h1>Configuration and Programming Guide<a class="headerlink" href="#configuration-and-programming-guide" title="Link to this heading"></a></h1>
+<p>This guide explains how to (1) reconfigure Zeppelin’s microarchitectural
+parameters, (2) add or remove execute units at the toplevel, and (3) write
+new programs that run on Zeppelin using the runtime in <code class="docutils literal notranslate"><span class="pre">app/</span></code>.</p>
+<section id="configuring-zeppelin-parameters">
+<h2>Configuring Zeppelin Parameters<a class="headerlink" href="#configuring-zeppelin-parameters" title="Link to this heading"></a></h2>
+<p>All toplevel parameters live in three places:</p>
+<ul class="simple">
+<li><p><strong>Defaults:</strong> <code class="docutils literal notranslate"><span class="pre">hw/top/Zeppelin_defaults.vh</span></code> defines a <code class="docutils literal notranslate"><span class="pre">P_*</span></code> macro for
+every toplevel parameter, each guarded by <code class="docutils literal notranslate"><span class="pre">\`ifndef</span></code> so the value can
+be overridden externally.</p></li>
+<li><p><strong>Toplevel module:</strong> <code class="docutils literal notranslate"><span class="pre">hw/top/Zeppelin.v</span></code> declares the parameters with
+the corresponding <code class="docutils literal notranslate"><span class="pre">\`P_*</span></code> macro as the default, and propagates them
+into the FU, DIU, XUs, WCU, and CFU.</p></li>
+<li><p><strong>Common types:</strong> <code class="docutils literal notranslate"><span class="pre">defs/UArch.v</span></code> defines the <code class="docutils literal notranslate"><span class="pre">rv_uop</span></code> opcode enum,
+the <code class="docutils literal notranslate"><span class="pre">rv_op_vec</span></code> one-hot subset type, and helper subsets used to
+describe which instructions each pipe can execute.</p></li>
+</ul>
+<p>There are two ways to change a parameter value, depending on whether the
+change applies globally or to a single instantiation.</p>
+<section id="setting-parameters-globally-via-d-macro-overrides">
+<h3>Setting Parameters Globally (via <code class="docutils literal notranslate"><span class="pre">-D</span></code> Macro Overrides)<a class="headerlink" href="#setting-parameters-globally-via-d-macro-overrides" title="Link to this heading"></a></h3>
+<p>Each macro in <code class="docutils literal notranslate"><span class="pre">Zeppelin_defaults.vh</span></code> can be overridden from the build
+system by passing a <code class="docutils literal notranslate"><span class="pre">-D&lt;NAME&gt;=&lt;VALUE&gt;</span></code> flag to the Verilog compiler.
+This is the recommended way to sweep configurations without editing
+source. To do it from a CMake build, edit
+<code class="docutils literal notranslate"><span class="pre">hw/top/sim/sims.cmake</span></code> (or the corresponding <code class="docutils literal notranslate"><span class="pre">tests.cmake</span></code> entry for
+test targets) and add the override to the simulator’s compile options, or
+configure CMake with extra Verilog flags:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>..<span class="w"> </span>-DCMAKE_Verilog_FLAGS<span class="o">=</span><span class="s2">&quot;-DP_NUM_FE_LANES=4 -DP_NUM_BE_LANES=4&quot;</span>
+</pre></div>
+</div>
+<p>The most commonly tweaked macros and what they control:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Macro</p></th>
+<th class="head"><p>Effect</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_NUM_FE_LANES</span></code></p></td>
+<td><p>Width of the frontend fetch block; number of instructions decoded
+and renamed per cycle</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_NUM_BE_LANES</span></code></p></td>
+<td><p>Commit lanes out of the WCU per cycle (also the ROB write/read
+width); must be <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">2**P_SEQ_NUM_BITS</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_NUM_ALUS</span></code>, <code class="docutils literal notranslate"><span class="pre">P_NUM_MULS</span></code></p></td>
+<td><p>Number of replicated ALU and MUL/DIV/REM execute units</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_SEQ_NUM_BITS</span></code></p></td>
+<td><p>Width of the sequence-number space (also bounds the ROB depth)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_NUM_PHYS_REGS</span></code></p></td>
+<td><p>Size of the physical register file. Must be at least
+<code class="docutils literal notranslate"><span class="pre">31</span> <span class="pre">+</span> <span class="pre">max_in_flight_writers</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_IQ_DEPTH</span></code></p></td>
+<td><p>Depth of each per-pipe issue queue</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_PIPE_BYPASS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: only the control pipe is in bypass mode (everything else
+gets a real issue queue); <code class="docutils literal notranslate"><span class="pre">1</span></code>: every pipe is bypass-only (no
+buffering)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_ALL_IQ_IN_ORDER</span></code></p></td>
+<td><p>Force every issue queue to the in-order variant (disable
+<code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_MULDIVREM_SEL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: iterative MUL/DIV/REM; <code class="docutils literal notranslate"><span class="pre">1</span></code>: single-cycle MUL with
+iterative DIV/REM; <code class="docutils literal notranslate"><span class="pre">2</span></code>: fully single-cycle MUL/DIV/REM</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_ENABLE_BRANCH_PRED</span></code></p></td>
+<td><p>Instantiate the BTB-based branch predictor in the FU</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_BTB_ENTRIES</span></code>, <code class="docutils literal notranslate"><span class="pre">P_BTB_WAYS</span></code></p></td>
+<td><p>BTB size and associativity</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_MAX_IN_FLIGHT</span></code></p></td>
+<td><p>Maximum in-flight instruction-memory requests</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">P_*_D_INTF_FIFO_DEPTH</span></code></p></td>
+<td><p>Per-XU input-FIFO depths (one for ALU, MUL, MEM, CTRL pipes)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">P_F_INTF_FIFO_DEPTH</span></code>, <code class="docutils literal notranslate"><span class="pre">P_X_INTF_FIFO_DEPTH</span></code></p></td>
+<td><p>DIUFifo and WCUFifo depth, respectively</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="setting-parameters-per-instantiation">
+<h3>Setting Parameters per Instantiation<a class="headerlink" href="#setting-parameters-per-instantiation" title="Link to this heading"></a></h3>
+<p>If a test or simulator wrapper needs a different configuration than the
+defaults, instantiate <code class="docutils literal notranslate"><span class="pre">Zeppelin</span></code> with an explicit parameter override
+rather than redefining the macro:</p>
+<div class="highlight-systemverilog notranslate"><div class="highlight"><pre><span></span><span class="n">Zeppelin</span><span class="w"> </span><span class="p">#(</span>
+<span class="w">  </span><span class="p">.</span><span class="n">p_num_fe_lanes</span><span class="w"> </span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+<span class="w">  </span><span class="p">.</span><span class="n">p_num_be_lanes</span><span class="w"> </span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+<span class="w">  </span><span class="p">.</span><span class="n">p_num_alus</span><span class="w">     </span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+<span class="w">  </span><span class="p">.</span><span class="n">p_num_muls</span><span class="w">     </span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="n">DUT</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Use this when (1) you want one test target to differ from the rest, (2)
+you’re writing a sweep harness that re-instantiates Zeppelin multiple
+times with different parameters in the same simulation, or (3) you need
+the value to depend on an upstream parameter rather than a fixed macro.</p>
+<p>Constraint checklist when picking parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span> <span class="pre">&lt;=</span> <span class="pre">2**p_seq_num_bits</span></code> (ROB depth bound)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_phys_regs</span> <span class="pre">&gt;=</span> <span class="pre">31</span> <span class="pre">+</span> <span class="pre">(maximum</span> <span class="pre">writers</span> <span class="pre">in-flight)</span></code>; the defaults
+in <code class="docutils literal notranslate"><span class="pre">Zeppelin_defaults.vh</span></code> are calibrated to the corresponding lane
+count and should be re-checked when changing <code class="docutils literal notranslate"><span class="pre">P_NUM_BE_LANES</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_ctrl_d_intf_fifo_depth</span></code> must remain at <code class="docutils literal notranslate"><span class="pre">1</span></code>; the control-flow
+pipe assumes a single-cycle branch resolution latency</p></li>
+<li><p>Memory-issuing pipes are automatically forced to in-order issue queues
+regardless of <code class="docutils literal notranslate"><span class="pre">p_all_iq_in_order</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="adding-and-removing-execute-units">
+<h2>Adding and Removing Execute Units<a class="headerlink" href="#adding-and-removing-execute-units" title="Link to this heading"></a></h2>
+<p>Execute units (XUs) are the swappable functional blocks at the back of
+the pipeline. There are two qualitatively different changes you might
+want to make: changing the <em>count</em> of an existing XU type, or adding a
+<em>new</em> XU type entirely.</p>
+<section id="changing-the-count-of-an-existing-xu">
+<h3>Changing the Count of an Existing XU<a class="headerlink" href="#changing-the-count-of-an-existing-xu" title="Link to this heading"></a></h3>
+<p>For ALUs and MUL/DIV/REM units, this is a one-parameter change:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">P_NUM_ALUS</span></code> (or <code class="docutils literal notranslate"><span class="pre">p_num_alus</span></code> at instantiation) to the desired
+count, including <code class="docutils literal notranslate"><span class="pre">0</span></code> to remove ALUs entirely (only useful for tests
+that don’t issue any ALU ops)</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">P_NUM_MULS</span></code> to the desired count of MUL/DIV/REM units, or <code class="docutils literal notranslate"><span class="pre">0</span></code>
+to drop M-extension support</p></li>
+</ul>
+<p>The toplevel’s generate loops (<code class="docutils literal notranslate"><span class="pre">ALU_XU_GEN</span></code>, <code class="docutils literal notranslate"><span class="pre">MUL_XU_GEN</span></code>) automatically
+replicate the units and the decode-issue crossbar and writeback arbiter
+re-derive <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span> <span class="pre">=</span> <span class="pre">p_num_alus</span> <span class="pre">+</span> <span class="pre">p_num_muls</span> <span class="pre">+</span> <span class="pre">2</span></code> from those
+counts. The MEM and CTRL pipes are always present at the fixed pipe
+indices <code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">+</span> <span class="pre">p_num_muls</span></code> and <code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">+</span> <span class="pre">p_num_muls</span> <span class="pre">+</span> <span class="pre">1</span></code>.</p>
+<p>When changing these counts, also tune the related parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> should usually scale with the total pipe count
+enough to absorb the additional concurrent completions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_iq_depth</span></code> may need to grow to keep instructions ready when more
+pipes compete for the same operand-producing instruction</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_phys_regs</span></code> should grow with both <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> and the
+pipe count, since wider configurations have more in-flight writes</p></li>
+</ul>
+</section>
+<section id="adding-a-new-xu-type-e-g-an-accelerator">
+<h3>Adding a New XU Type (e.g. an Accelerator)<a class="headerlink" href="#adding-a-new-xu-type-e-g-an-accelerator" title="Link to this heading"></a></h3>
+<p>The minimal recipe for plumbing a new XU into the toplevel:</p>
+<ol class="arabic simple">
+<li><p><strong>Implement the XU module.</strong> It must accept a <code class="docutils literal notranslate"><span class="pre">D__XIntf.sub</span></code> and
+drive an <code class="docutils literal notranslate"><span class="pre">X__WIntf.pub</span></code>. If the XU resolves control flow, it also
+needs to drive a <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif.pub</span></code>; if it accesses memory, it
+needs a <code class="docutils literal notranslate"><span class="pre">MemIntf.client</span></code>. Use <code class="docutils literal notranslate"><span class="pre">ALU.v</span></code> (single-cycle combinational)
+or <code class="docutils literal notranslate"><span class="pre">IterativeMulDivRem.v</span></code> (multi-cycle state machine) as a starting
+template. Match the existing <code class="docutils literal notranslate"><span class="pre">trace</span></code> / <code class="docutils literal notranslate"><span class="pre">trace_header</span></code> convention
+so the linetrace integrates cleanly.</p></li>
+<li><p><strong>Extend the opcode set if needed.</strong> If the XU implements new
+instructions, add the corresponding entries to the <code class="docutils literal notranslate"><span class="pre">rv_uop</span></code> enum
+in <code class="docutils literal notranslate"><span class="pre">defs/UArch.v</span></code>, bump <code class="docutils literal notranslate"><span class="pre">num_ops</span></code>, define the matching
+<code class="docutils literal notranslate"><span class="pre">OP_&lt;NAME&gt;_VEC</span></code> one-hot localparams, and update the assembler/
+disassembler/FL processor in <code class="docutils literal notranslate"><span class="pre">asm/</span></code> and <code class="docutils literal notranslate"><span class="pre">fl/</span></code> to recognize them.
+Existing instructions can be reused without any opcode changes.</p></li>
+<li><p><strong>Define the new pipe’s ISA subset in the toplevel.</strong> Add a new
+<code class="docutils literal notranslate"><span class="pre">localparam</span> <span class="pre">p_&lt;name&gt;_subset</span></code> in <code class="docutils literal notranslate"><span class="pre">hw/top/Zeppelin.v</span></code> next to the
+existing <code class="docutils literal notranslate"><span class="pre">p_alu_subset</span></code>/<code class="docutils literal notranslate"><span class="pre">p_m_subset</span></code> definitions, OR-combining
+the <code class="docutils literal notranslate"><span class="pre">OP_*_VEC</span></code> constants for the operations the XU handles.</p></li>
+<li><p><strong>Update the pipe layout.</strong> Bump <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> (currently derived
+as <code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">+</span> <span class="pre">p_num_muls</span> <span class="pre">+</span> <span class="pre">2</span></code>; either change that derivation or
+introduce a new <code class="docutils literal notranslate"><span class="pre">p_num_&lt;xu&gt;</span></code> parameter that participates in it).
+Update <code class="docutils literal notranslate"><span class="pre">gen_pipe_subsets</span></code> to assign the new subset to the new pipe
+index, and shift the MEM/CTRL pipe indices accordingly. Allocate the
+matching slot in <code class="docutils literal notranslate"><span class="pre">d__x_intfs[]</span></code>, <code class="docutils literal notranslate"><span class="pre">d__x_del[]</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">x__w_intfs[]</span></code>.</p></li>
+<li><p><strong>Instantiate the XU.</strong> Add a <code class="docutils literal notranslate"><span class="pre">generate</span></code> block (or direct
+instantiation if only one copy) that hooks up <code class="docutils literal notranslate"><span class="pre">D</span></code>, <code class="docutils literal notranslate"><span class="pre">W</span></code>, and any
+notification or memory interfaces just like the existing XUs.</p></li>
+<li><p><strong>Wire any new notifications into the CFU/SU.</strong> If the XU publishes
+<code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code>, extend <code class="docutils literal notranslate"><span class="pre">ctrl_flow_arb_notif[]</span></code> and increase
+<code class="docutils literal notranslate"><span class="pre">p_num_arb</span></code> on the <code class="docutils literal notranslate"><span class="pre">CtrlFlowUnit</span></code> instantiation so the new source
+participates in age-based arbitration.</p></li>
+<li><p><strong>Decide on the issue-queue policy.</strong> By default a new pipe gets the
+out-of-order <code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code>. If the XU has memory-ordering
+constraints (like the LSU) or otherwise needs in-order issue, add its
+subset to the check inside the DIU that forces an in-order queue for
+pipes that intersect <code class="docutils literal notranslate"><span class="pre">p_mem_subset</span></code> (and consider whether the XU
+really wants a similar carve-out parameter).</p></li>
+<li><p><strong>Update tests and the linetrace.</strong> Add the new XU’s trace column to
+<code class="docutils literal notranslate"><span class="pre">Zeppelin.v</span></code>’s <code class="docutils literal notranslate"><span class="pre">trace</span></code>/<code class="docutils literal notranslate"><span class="pre">trace_header</span></code> functions and the
+<code class="docutils literal notranslate"><span class="pre">Zeppelin_linetrace.md</span></code> reference. Add unit tests under
+<code class="docutils literal notranslate"><span class="pre">hw/execute/test/</span></code> and integration test cases under
+<code class="docutils literal notranslate"><span class="pre">hw/top/test/test_cases/</span></code>.</p></li>
+</ol>
+<p>To remove an entire XU type (e.g. drop the MUL pipe in a minimal
+configuration), it is usually enough to set <code class="docutils literal notranslate"><span class="pre">P_NUM_MULS</span></code> (or the
+analogous count parameter) to <code class="docutils literal notranslate"><span class="pre">0</span></code> and avoid emitting the corresponding
+opcodes from the compiler – the generate loop becomes empty and the
+crossbar contracts automatically.</p>
+</section>
+</section>
+<section id="writing-programs-for-zeppelin">
+<h2>Writing Programs for Zeppelin<a class="headerlink" href="#writing-programs-for-zeppelin" title="Link to this heading"></a></h2>
+<p>Programs live under <code class="docutils literal notranslate"><span class="pre">app/&lt;program&gt;/</span></code> and are built into RISC-V ELF
+binaries that the simulator loads at boot. Each program also gets a
+“native” build (using the host compiler with the same source) so it can
+be exercised quickly on a workstation before being run on the simulator.</p>
+<section id="program-layout">
+<h3>Program Layout<a class="headerlink" href="#program-layout" title="Link to this heading"></a></h3>
+<p>A minimal program is just two files. The C++ source:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// app/myprog/myprog.cpp</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;utils/zeppelin_wprintf.h&quot;</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">zeppelin_wprintf</span><span class="p">(</span><span class="w"> </span><span class="sa">L</span><span class="s">&quot;Hello from myprog</span><span class="se">\n</span><span class="s">&quot;</span><span class="w"> </span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and a small CMakeLists that lists which files are the entry points and
+which are supporting sources:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># app/myprog/CMakeLists.txt</span>
+<span class="nb">set</span><span class="p">(</span><span class="s">APP_FILES</span>
+<span class="w">  </span><span class="s">myprog.cpp</span>
+<span class="w">  </span><span class="s">PARENT_SCOPE</span>
+<span class="p">)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="s">SRC_FILES</span>
+<span class="w">  </span><span class="s">PARENT_SCOPE</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">APP_FILES</span></code> is the list of files that each contain a <code class="docutils literal notranslate"><span class="pre">main</span></code> – one
+RISC-V target <code class="docutils literal notranslate"><span class="pre">app-&lt;name&gt;</span></code> and one native target <code class="docutils literal notranslate"><span class="pre">app-&lt;name&gt;-native</span></code>
+are generated per entry. <code class="docutils literal notranslate"><span class="pre">SRC_FILES</span></code> is any shared code that should be
+linked into every entry point in the directory (leave it empty when each
+<code class="docutils literal notranslate"><span class="pre">.cpp</span></code> is self-contained, as for <code class="docutils literal notranslate"><span class="pre">hello</span></code> and <code class="docutils literal notranslate"><span class="pre">echo</span></code>; see <code class="docutils literal notranslate"><span class="pre">ubmark</span></code>
+for an example that uses it).</p>
+<p>Finally, register the new directory by appending its name to
+<code class="docutils literal notranslate"><span class="pre">APP_SUBDIRS</span></code> in <code class="docutils literal notranslate"><span class="pre">app/CMakeLists.txt</span></code>:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">APP_SUBDIRS</span>
+<span class="w">  </span><span class="s">adventure</span>
+<span class="w">  </span><span class="s">echo</span>
+<span class="w">  </span><span class="s">hello</span>
+<span class="w">  </span><span class="s">myprog</span><span class="w">   </span><span class="c"># added</span>
+<span class="w">  </span><span class="s">sqrt</span>
+<span class="w">  </span><span class="s">ubmark</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>After reconfiguring CMake the targets <code class="docutils literal notranslate"><span class="pre">app-myprog</span></code> (RISC-V ELF) and
+<code class="docutils literal notranslate"><span class="pre">app-myprog-native</span></code> (host binary) become available.</p>
+</section>
+<section id="the-zeppelin-runtime">
+<h3>The Zeppelin Runtime<a class="headerlink" href="#the-zeppelin-runtime" title="Link to this heading"></a></h3>
+<p>Because Zeppelin doesn’t yet have an OS or libc, programs talk directly
+to memory-mapped peripherals through the small runtime in <code class="docutils literal notranslate"><span class="pre">app/utils/</span></code>.
+Every header uses the same <code class="docutils literal notranslate"><span class="pre">_RISCV</span></code> switch so the same source compiles
+to a real host binary natively. The runtime functions provided are:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Header</p></th>
+<th class="head"><p>Provides</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_wprintf.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_wprintf(L&quot;...&quot;)</span></code> – wide-character <code class="docutils literal notranslate"><span class="pre">printf</span></code> against
+<code class="docutils literal notranslate"><span class="pre">0xF0000000</span></code>. Word-aligned stores; integers print in hex. Use
+this when you only need to output text and want minimal code size.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_stdio.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_printf</span></code>, <code class="docutils literal notranslate"><span class="pre">zeppelin_sscanf</span></code>, <code class="docutils literal notranslate"><span class="pre">zeppelin_putchar</span></code>,
+<code class="docutils literal notranslate"><span class="pre">zeppelin_getchar</span></code>, <code class="docutils literal notranslate"><span class="pre">zeppelin_fputs</span></code>, <code class="docutils literal notranslate"><span class="pre">zeppelin_fgets</span></code>,
+<code class="docutils literal notranslate"><span class="pre">zeppelin_fflush</span></code>. Full <code class="docutils literal notranslate"><span class="pre">char*</span></code> IO via <code class="docutils literal notranslate"><span class="pre">%d</span> <span class="pre">%s</span> <span class="pre">%c</span> <span class="pre">%%</span></code> against
+the terminal MMIO; reads from <code class="docutils literal notranslate"><span class="pre">0xF0000004</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_string.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">strlen</span></code>-style helpers shared by the printf/scanf machinery</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_misc.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_atol</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_exit.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_exit(int</span> <span class="pre">code)</span></code> – terminates the simulation by
+writing <code class="docutils literal notranslate"><span class="pre">code</span></code> to <code class="docutils literal notranslate"><span class="pre">0xFFFFFFFC</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_stats.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_cycle_count()</span></code> and <code class="docutils literal notranslate"><span class="pre">zeppelin_inst_count()</span></code> – reads
+from <code class="docutils literal notranslate"><span class="pre">0xFFFFFF00</span></code> and <code class="docutils literal notranslate"><span class="pre">0xFFFFFF04</span></code> respectively. Useful for
+computing CPI:
+<code class="docutils literal notranslate"><span class="pre">cpi</span> <span class="pre">=</span> <span class="pre">(end_cycles</span> <span class="pre">-</span> <span class="pre">start_cycles)</span> <span class="pre">/</span> <span class="pre">(end_insts</span> <span class="pre">-</span> <span class="pre">start_insts)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_rand.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rand</span></code>/<code class="docutils literal notranslate"><span class="pre">srand</span></code>-equivalents for deterministic stimulus</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zeppelin_stdlib.h</span></code></p></td>
+<td><p>Small libc-like helpers that don’t need a separate <code class="docutils literal notranslate"><span class="pre">.cpp</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>The runtime objects are linked into every entry point automatically via
+the <code class="docutils literal notranslate"><span class="pre">UTILS</span></code> static library defined in <code class="docutils literal notranslate"><span class="pre">app/CMakeLists.txt</span></code>; <code class="docutils literal notranslate"><span class="pre">#include</span></code>-ing
+the header is the only thing a program needs to do.</p>
+</section>
+<section id="memory-map-and-exit-convention">
+<h3>Memory Map and Exit Convention<a class="headerlink" href="#memory-map-and-exit-convention" title="Link to this heading"></a></h3>
+<p>The MMIO peripherals exposed by the simulator and the FL processor are:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Address</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xF0000000</span></code></p></td>
+<td><p>Terminal output (writes print a character)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0xF0000004</span></code></p></td>
+<td><p>Terminal input (reads consume a character)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xFFFFFF00</span></code></p></td>
+<td><p>Cycle counter (read-only)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0xFFFFFF04</span></code></p></td>
+<td><p>Instruction counter (read-only)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0xFFFFFFFC</span></code></p></td>
+<td><p>Exit register (writes terminate the simulation with the written
+exit code)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Everything below <code class="docutils literal notranslate"><span class="pre">0xF0000000</span></code> is normal memory; the ELF is loaded
+starting at <code class="docutils literal notranslate"><span class="pre">0x00000200</span></code> per <code class="docutils literal notranslate"><span class="pre">app/scripts/zeppelin.ld</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">app/scripts/crt0.S</span></code> boot stub sets up the stack, zeros <code class="docutils literal notranslate"><span class="pre">.bss</span></code>, calls
+<code class="docutils literal notranslate"><span class="pre">main</span></code>, and then writes the return value into the exit register so a
+plain <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">0;</span></code> from <code class="docutils literal notranslate"><span class="pre">main</span></code> will cleanly halt the simulator.</p>
+</section>
+<section id="building-and-running">
+<h3>Building and Running<a class="headerlink" href="#building-and-running" title="Link to this heading"></a></h3>
+<p>From a configured <code class="docutils literal notranslate"><span class="pre">build/</span></code> directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Cross-compile for Zeppelin</span>
+make<span class="w"> </span>app-myprog<span class="w"> </span>-j
+<span class="c1"># Build the RTL simulator (only needs to happen once per RTL change)</span>
+make<span class="w"> </span>zeppelin-sim<span class="w"> </span>-j
+<span class="c1"># Run the ELF on the RTL simulator</span>
+./zeppelin-sim<span class="w"> </span>+elf<span class="o">=</span>app/myprog
+</pre></div>
+</div>
+<p>To debug a program before running it on RTL, build and run the native
+target:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>app-myprog-native<span class="w"> </span>-j
+./app/myprog-native
+</pre></div>
+</div>
+<p>To verify against the FL processor (the golden reference used by all
+integration tests):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>fl-sim<span class="w"> </span>-j
+./fl-sim<span class="w"> </span>app/myprog
+</pre></div>
+</div>
+<p>The runtime macros switch transparently between MMIO writes (on RV32)
+and stdio (on the host), so the same program produces the same output
+on all three.</p>
+</section>
+<section id="performance-tips">
+<h3>Performance Tips<a class="headerlink" href="#performance-tips" title="Link to this heading"></a></h3>
+<p>The microbenchmarks under <code class="docutils literal notranslate"><span class="pre">app/ubmark/</span></code> are written specifically to
+stress different parts of the pipeline, and are a useful reference when
+writing your own:</p>
+<ul class="simple">
+<li><p>Wrap the timed region with <code class="docutils literal notranslate"><span class="pre">zeppelin_cycle_count()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">zeppelin_inst_count()</span></code> reads, not around the whole <code class="docutils literal notranslate"><span class="pre">main</span></code> – this
+excludes startup overhead.</p></li>
+<li><p>Independent computations expose ILP and benefit from wider frontend
+configurations. Pairs of benchmarks like <code class="docutils literal notranslate"><span class="pre">depchain-serial</span></code> vs
+<code class="docutils literal notranslate"><span class="pre">depchain-multi</span></code> and <code class="docutils literal notranslate"><span class="pre">fir-naive</span></code> vs <code class="docutils literal notranslate"><span class="pre">fir-unrolled</span></code> illustrate the
+effect.</p></li>
+<li><p>Branches that are not data-dependent benefit from enabling the branch
+predictor and growing <code class="docutils literal notranslate"><span class="pre">P_BTB_ENTRIES</span></code>; data-dependent branches
+(<code class="docutils literal notranslate"><span class="pre">branchloop-branchy</span></code>, <code class="docutils literal notranslate"><span class="pre">bsearch</span></code>) saturate the simple BTB and need
+a smarter predictor to improve.</p></li>
+<li><p>Mixed compute/memory loops (<code class="docutils literal notranslate"><span class="pre">memcopy-compheavy</span></code>) benefit most from
+growing both <code class="docutils literal notranslate"><span class="pre">P_NUM_FE_LANES</span></code> and an out-of-order issue queue
+(<code class="docutils literal notranslate"><span class="pre">P_ALL_IQ_IN_ORDER=0</span></code> with <code class="docutils literal notranslate"><span class="pre">P_IQ_DEPTH&gt;=2</span></code>), since long-latency
+loads no longer block independent ALU work.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../dependencies/" class="btn btn-neutral float-left" title="Dependencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../todo/" class="btn btn-neutral float-right" title="Further Work" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

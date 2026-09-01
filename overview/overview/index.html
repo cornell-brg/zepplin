@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processor Overview &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Repository Structure" href="../repository_structure/" />
+    <link rel="prev" title="Data Flow in the Processor" href="../data_flow/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Processor Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-composition">Pipeline Composition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#toplevel-parameters">Toplevel Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configurations-used-in-evaluation">Configurations Used in Evaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../units/units/">Microarchitectural Units</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Processor Overview</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/overview/overview.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="processor-overview">
+<h1>Processor Overview<a class="headerlink" href="#processor-overview" title="Link to this heading"></a></h1>
+<p>Zeppelin is implemented as a single top-level processor module
+(<code class="docutils literal notranslate"><span class="pre">hw/top/Zeppelin.v</span></code>) parameterized to cover the full range of
+configurations from a minimal single-issue core to a multi-lane superscalar
+core with branch prediction and out-of-order issue queues.</p>
+<a class="bottompadding reference internal image-reference" href="../../_images/zeppelin.drawio.png"><img alt="An overview of the Zeppelin superscalar modular processor" class="align-center bottompadding" src="../../_images/zeppelin.drawio.png" style="width: 80%;" />
+</a>
+<section id="pipeline-composition">
+<h2>Pipeline Composition<a class="headerlink" href="#pipeline-composition" title="Link to this heading"></a></h2>
+<p>The Zeppelin toplevel instantiates the following units:</p>
+<ul class="simple">
+<li><p>A single <a class="reference internal" href="../../units/fetch_unit/"><span class="doc">Fetch Unit (FU)</span></a> driving
+<code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> parallel <code class="docutils literal notranslate"><span class="pre">F__DIntf</span></code> interfaces toward the DIU</p></li>
+<li><p>A single <a class="reference internal" href="../../units/decode_issue_unit/"><span class="doc">Decode-Issue Unit (DIU)</span></a> that
+receives <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> instructions per cycle and drives
+<code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> parallel <code class="docutils literal notranslate"><span class="pre">D__XIntf</span></code> interfaces toward the execute units</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_alus</span></code> parallel <a class="reference internal" href="../../units/execute_units/#xu-alu"><span class="std std-ref">ALU</span></a> execute units</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_num_muls</span></code> parallel
+<a class="reference internal" href="../../units/execute_units/#xu-muldivrem"><span class="std std-ref">multiply/divide/remainder</span></a> execute units, whose
+internal implementation (fully iterative, hybrid, or fully single-cycle)
+is selected by the <code class="docutils literal notranslate"><span class="pre">p_muldivrem_sel</span></code> parameter</p></li>
+<li><p>One <a class="reference internal" href="../../units/execute_units/#xu-lsu"><span class="std std-ref">Load-Store Unit (LSU)</span></a> execute unit</p></li>
+<li><p>One <a class="reference internal" href="../../units/execute_units/#xu-ctrl"><span class="std std-ref">Control-Flow Execute Unit</span></a> for conditional branches</p></li>
+<li><p>A single <a class="reference internal" href="../../units/writeback_commit_unit/"><span class="doc">Writeback-Commit Unit (WCU)</span></a>
+that arbitrates the <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> completing pipes down to
+<code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> backend commit lanes</p></li>
+<li><p>A single <a class="reference internal" href="../../units/ctrl_flow_unit/"><span class="doc">Control-Flow Unit (CFU)</span></a> that
+arbitrates between control-flow redirect notifications from the DIU and
+the control-flow execute unit and broadcasts the winning redirect to the
+fetch unit and back to the DIU</p></li>
+</ul>
+<p>The number of pipes <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> is derived as
+<code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">+</span> <span class="pre">p_num_muls</span> <span class="pre">+</span> <span class="pre">2</span></code> (the <code class="docutils literal notranslate"><span class="pre">+</span> <span class="pre">2</span></code> for the LSU and control-flow
+execute units).</p>
+</section>
+<section id="toplevel-parameters">
+<h2>Toplevel Parameters<a class="headerlink" href="#toplevel-parameters" title="Link to this heading"></a></h2>
+<p>The full list of toplevel parameters and their defaults lives in
+<code class="docutils literal notranslate"><span class="pre">hw/top/Zeppelin_defaults.vh</span></code> and <code class="docutils literal notranslate"><span class="pre">defs/UArch.v</span></code>. The most important
+configuration knobs are summarized below.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code></p></td>
+<td><p>Width of the frontend fetch block; number of instructions decoded
+and renamed per cycle</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code></p></td>
+<td><p>Number of commit lanes out of the WCU per cycle; must be
+<span class="math notranslate nohighlight">\(\leq 2^{p\_seq\_num\_bits}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_num_alus</span></code> / <code class="docutils literal notranslate"><span class="pre">p_num_muls</span></code></p></td>
+<td><p>Number of replicated ALU and MUL/DIV/REM execute units</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_seq_num_bits</span></code></p></td>
+<td><p>Width of the sequence-number space (also the ROB depth)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_num_phys_regs</span></code></p></td>
+<td><p>Size of the physical register file</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_iq_depth</span></code></p></td>
+<td><p>Depth of each per-pipe issue queue</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_pipe_bypass</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: only the control pipe is in bypass (combinational) mode;
+<code class="docutils literal notranslate"><span class="pre">1</span></code>: all pipes are bypass-mode (no buffering)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_all_iq_in_order</span></code></p></td>
+<td><p>Force every issue queue to use the in-order variant regardless of
+pipe type</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_muldivrem_sel</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: fully iterative MUL/DIV/REM; <code class="docutils literal notranslate"><span class="pre">1</span></code>: single-cycle MUL with
+iterative DIV/REM; <code class="docutils literal notranslate"><span class="pre">2</span></code>: fully single-cycle</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_enable_branch_pred</span></code></p></td>
+<td><p>Enable the optional branch-target buffer in the fetch unit</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_btb_entries</span></code> / <code class="docutils literal notranslate"><span class="pre">p_btb_ways</span></code></p></td>
+<td><p>Set-associative BTB size and associativity</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p_max_in_flight</span></code></p></td>
+<td><p>Maximum in-flight instruction-memory requests</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p_f_intf_fifo_depth</span></code>, <code class="docutils literal notranslate"><span class="pre">p_x_intf_fifo_depth</span></code>,
+<code class="docutils literal notranslate"><span class="pre">p_*_d_intf_fifo_depth</span></code></p></td>
+<td><p>Per-interface FIFO depths between major stages and at each execute
+unit input</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="configurations-used-in-evaluation">
+<h2>Configurations Used in Evaluation<a class="headerlink" href="#configurations-used-in-evaluation" title="Link to this heading"></a></h2>
+<p>While the same RTL covers the full range of designs, the BRG MEng evaluation
+focused on the following representative points:</p>
+<ul class="simple">
+<li><p><strong>Single-issue (1FE, 1BE).</strong> <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span> <span class="pre">=</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span> <span class="pre">=</span> <span class="pre">1</span></code>,
+<code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">=</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">p_num_muls</span> <span class="pre">=</span> <span class="pre">1</span></code>. Roughly matches Blimp in area and
+performance; used as the modular-processor baseline.</p></li>
+<li><p><strong>Two-issue (2FE, 2BE).</strong> <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span> <span class="pre">=</span> <span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span> <span class="pre">=</span> <span class="pre">2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">p_num_alus</span> <span class="pre">=</span> <span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">p_num_muls</span> <span class="pre">=</span> <span class="pre">2</span></code>. The pareto-optimal balance of
+area, energy, and performance; the recommended default.</p></li>
+<li><p><strong>Two-issue with out-of-order issue queues.</strong> Same as 2FE/2BE, with
+<code class="docutils literal notranslate"><span class="pre">p_all_iq_in_order</span> <span class="pre">=</span> <span class="pre">0</span></code> and issue-queue depth <code class="docutils literal notranslate"><span class="pre">\geq</span> <span class="pre">2</span></code> so that the
+out-of-order <code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code> is instantiated on ALU and MUL pipes.</p></li>
+<li><p><strong>Wider configurations (3FE/3BE, 4FE/4BE).</strong> Achievable by setting the
+lane counts higher, with diminishing performance returns. See the design
+sweeps and pareto frontiers in the project report for the tradeoff
+details.</p></li>
+</ul>
+<p>The control-flow execute pipe is always in bypass mode (its issue queue is
+forced to <code class="docutils literal notranslate"><span class="pre">p_bypass</span> <span class="pre">=</span> <span class="pre">1</span></code>) so that branches resolve in a single cycle, and
+the memory pipe is always forced to use the in-order issue-queue variant
+because the load-store unit does not contain a load-store queue.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../data_flow/" class="btn btn-neutral float-left" title="Data Flow in the Processor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../repository_structure/" class="btn btn-neutral float-right" title="Repository Structure" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

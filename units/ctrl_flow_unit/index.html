@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Flow Unit (CFU) &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Sequence Numbers" href="../../uarch/seq_nums/" />
+    <link rel="prev" title="Writeback Commit Unit (WCU)" href="../writeback_commit_unit/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../units/">Microarchitectural Units</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../fetch_unit/">Fetch Unit (FU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../decode_issue_unit/">Decode Issue Unit (DIU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../execute_units/">Execute Units (XU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../writeback_commit_unit/">Writeback Commit Unit (WCU)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Control Flow Unit (CFU)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#arbitration">Arbitration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#decoupled-grant-for-the-diu">Decoupled Grant for the DIU</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../units/">Microarchitectural Units</a></li>
+      <li class="breadcrumb-item active">Control Flow Unit (CFU)</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/units/ctrl_flow_unit.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="control-flow-unit-cfu">
+<h1>Control Flow Unit (CFU)<a class="headerlink" href="#control-flow-unit-cfu" title="Link to this heading"></a></h1>
+<p>The Control Flow Unit (<code class="docutils literal notranslate"><span class="pre">CtrlFlowUnit</span></code>) arbitrates between control-flow
+redirect notifications from multiple sources – the decode-issue unit
+(for JAL/JALR) and the control-flow execute unit (for resolved
+conditional branches) – and selects a single winner each cycle. The
+winning redirect is broadcast to the fetch unit (to restart instruction
+fetching at the correct target) and back to the decode-issue unit (to
+flush the current instruction window). In configurations with branch
+prediction, the unit also forwards branch-predictor update signals
+(<code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code>, <code class="docutils literal notranslate"><span class="pre">taken</span></code>, <code class="docutils literal notranslate"><span class="pre">pc</span></code>, <code class="docutils literal notranslate"><span class="pre">target</span></code>) from the winning
+source so the fetch unit’s branch predictor can learn from resolved
+branches and jumps.</p>
+<p>The CFU operates on the <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code> interface, which carries
+<code class="docutils literal notranslate"><span class="pre">redirect_val</span></code> (fetch must redirect), <code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code> (branch/JAL
+resolution data is valid for BP update), <code class="docutils literal notranslate"><span class="pre">seq_num</span></code>, <code class="docutils literal notranslate"><span class="pre">pc</span></code>, <code class="docutils literal notranslate"><span class="pre">target</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">taken</span></code>.</p>
+<section id="arbitration">
+<h2>Arbitration<a class="headerlink" href="#arbitration" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">CtrlFlowUnit</span></code> arbitrates between <code class="docutils literal notranslate"><span class="pre">p_num_arb</span></code> redirect sources using
+a binary-tree structure of pairwise <code class="docutils literal notranslate"><span class="pre">CtrlFlowUnitHelper</span></code> arbiters.
+Each helper selects the older of two notifications based on their
+sequence numbers, using the <code class="docutils literal notranslate"><span class="pre">oldest_seq_num</span></code> from a single shared
+<code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code> instance for wrap-around-safe age comparison across the
+<code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> commit lanes (see <a class="reference internal" href="../../uarch/seq_nums/"><span class="doc">Sequence Numbers</span></a>). The
+binary tree is built at elaboration time: leaf nodes connect to the
+<code class="docutils literal notranslate"><span class="pre">arb</span></code> interface array, and each level halves the number of candidates
+until a single winner emerges at the root.</p>
+<p>When only one source is valid, it wins unconditionally. When both
+sources are valid, the older notification (the one with the earlier
+sequence number) is selected. Unused leaf slots (when <code class="docutils literal notranslate"><span class="pre">p_num_arb</span></code> is
+not a power of two) are zero-filled with <code class="docutils literal notranslate"><span class="pre">redirect_val</span> <span class="pre">=</span> <span class="pre">0</span></code>. For the
+trivial <code class="docutils literal notranslate"><span class="pre">p_num_arb</span> <span class="pre">==</span> <span class="pre">1</span></code> case, the single source passes through
+directly with no arbitration hardware.</p>
+<p>Helper modules pass through the full <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code> payload
+(<code class="docutils literal notranslate"><span class="pre">pc</span></code>, <code class="docutils literal notranslate"><span class="pre">target</span></code>, <code class="docutils literal notranslate"><span class="pre">taken</span></code>, <code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code>) from the winning
+source, so the branch predictor receives update information through the
+arbitrated grant.</p>
+</section>
+<section id="decoupled-grant-for-the-diu">
+<h2>Decoupled Grant for the DIU<a class="headerlink" href="#decoupled-grant-for-the-diu" title="Link to this heading"></a></h2>
+<p>The CFU produces two grant outputs:</p>
+<ul class="simple">
+<li><p><strong>``gnt``:</strong> The full arbitration result across all <code class="docutils literal notranslate"><span class="pre">p_num_arb</span></code>
+sources, broadcast to the fetch unit and other subscribers.</p></li>
+<li><p><strong>``gnt_excl``:</strong> The arbitration result <em>excluding</em> the DIU source
+(identified by <code class="docutils literal notranslate"><span class="pre">p_diu_idx</span></code>), connected to the DIU’s own
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_sub</span></code> input.</p></li>
+</ul>
+<p>The decoupled grant breaks the combinational loop that would otherwise
+form: the DIU publishes a redirect combinationally on its
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_pub</span></code> interface, the CFU arbitrates it into <code class="docutils literal notranslate"><span class="pre">gnt</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">gnt</span></code> would feed back into the DIU. By stripping the DIU’s own
+redirect out of the path that returns to the DIU, the loop is broken
+without needing a sequential break in the fetch-redirect path. Both
+grants use the same <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code> instance for age tracking. The full
+grant uses a binary tree of arbiters across all sources; the excluded
+grant uses a second binary tree that omits the DIU source. When
+<code class="docutils literal notranslate"><span class="pre">p_num_arb</span> <span class="pre">==</span> <span class="pre">2</span></code> (the common case with one XU source and one DIU
+source), <code class="docutils literal notranslate"><span class="pre">gnt_excl</span></code> is a zero-cost passthrough of the single non-DIU
+source, requiring no additional arbitration hardware.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../writeback_commit_unit/" class="btn btn-neutral float-left" title="Writeback Commit Unit (WCU)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../uarch/seq_nums/" class="btn btn-neutral float-right" title="Sequence Numbers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

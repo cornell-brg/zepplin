@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decode Issue Unit (DIU) &mdash; Zeppelin  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/logo.css?v=0320fe47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/wavedrom.css?v=4f1d019f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/table.css?v=09be579f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/image.css?v=c42c1b78" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>let toggleHintShow = 'Click to show';</script>
+      <script>let toggleHintHide = 'Click to hide';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Execute Units (XU)" href="../execute_units/" />
+    <link rel="prev" title="Fetch Unit" href="../fetch_unit/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            Zeppelin
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/motivation/">Design Motivation and Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/data_flow/">Data Flow in the Processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/overview/">Processor Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/repository_structure/">Repository Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/build_system/">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/dependencies/">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/programming_guide/">Configuration and Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview/todo/">Further Work</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Units</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../units/">Microarchitectural Units</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../fetch_unit/">Fetch Unit (FU)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Decode Issue Unit (DIU)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#instruction-window-fifo-diufifo">Instruction Window FIFO: DIUFifo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instruction-check-stages">Instruction Check Stages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-flow-handling">Control Flow Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instruction-to-pipe-mapper-ssinstmapper">Instruction-to-Pipe Mapper: SSInstMapper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-router-ssinstrouter">Data Router: SSInstRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-queue-selection-and-configuration">Issue Queue Selection and Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#in-order-issue-queue-issuequeueinorder">In-Order Issue Queue: IssueQueueInOrder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#out-of-order-issue-queue-issuequeueooo">Out-of-Order Issue Queue: IssueQueueOOO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sequence-age-tracker-ssseqage">Sequence Age Tracker: SSSeqAge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#register-file-ssregfile">Register File: SSRegfile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rename-table-ssrenametable">Rename Table: SSRenameTable</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../execute_units/">Execute Units (XU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../writeback_commit_unit/">Writeback Commit Unit (WCU)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ctrl_flow_unit/">Control Flow Unit (CFU)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Microarchitectural Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../uarch/seq_nums/">Sequence Numbers</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Level (FL) Utilities</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/assembler/">Assembler and Disassembler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fl/proc/">Functional-Level Processor</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">Zeppelin</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../units/">Microarchitectural Units</a></li>
+      <li class="breadcrumb-item active">Decode Issue Unit (DIU)</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/cornell-brg/zeppelin/blob/main/docs/units/decode_issue_unit.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="decode-issue-unit-diu">
+<h1>Decode Issue Unit (DIU)<a class="headerlink" href="#decode-issue-unit-diu" title="Link to this heading"></a></h1>
+<p>The Decode-Issue Unit (<code class="docutils literal notranslate"><span class="pre">DecodeIssueUnit</span></code>) decodes <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code>
+instructions per cycle in parallel, renames architectural registers to
+physical registers, reads source operand values, and issues up to
+<code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> instructions per cycle to the execute units via per-pipe
+issue queues. Because all instructions in a fetch block travel together, the
+DIU also identifies and handles control-flow instructions within the block
+before any younger instructions in the same block are allowed to dispatch.</p>
+<p>As shown in the diagram below, each frontend lane has its own
+<code class="docutils literal notranslate"><span class="pre">InstDecoder</span></code> and <code class="docutils literal notranslate"><span class="pre">ImmGen</span></code> instance (wrapped in <code class="docutils literal notranslate"><span class="pre">SSDecoder</span></code>) that
+decode the instruction word and generate the immediate value independently.
+The <code class="docutils literal notranslate"><span class="pre">SSRenameTable</span></code> allocates physical registers for all lanes
+simultaneously with inter-lane forwarding of destination register mappings
+to handle intra-block dependencies. Instructions are then routed from the
+<code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> input lanes to the <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> output issue queues
+via a two-stage crossbar: the <code class="docutils literal notranslate"><span class="pre">SSInstMapper</span></code> computes the lane-to-pipe
+mapping using an iSLIP-based matching engine, and the <code class="docutils literal notranslate"><span class="pre">SSInstRouter</span></code>
+muxes instruction data according to the mapping. Each issue queue is either
+the in-order <code class="docutils literal notranslate"><span class="pre">IssueQueueInOrder</span></code> or the out-of-order <code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code>,
+with its own register file read ports for independent operand resolution.</p>
+<a class="bottompadding reference internal image-reference" href="../../_images/decode-issue-unitdrawio.drawio.png"><img alt="A picture of the Decode Issue Unit" class="align-center bottompadding" src="../../_images/decode-issue-unitdrawio.drawio.png" style="width: 80%;" />
+</a>
+<section id="instruction-window-fifo-diufifo">
+<h2>Instruction Window FIFO: DIUFifo<a class="headerlink" href="#instruction-window-fifo-diufifo" title="Link to this heading"></a></h2>
+<p>The DIU uses a <code class="docutils literal notranslate"><span class="pre">DIUFifo</span></code> to buffer fetched instruction blocks between the
+fetch and decode-issue stages. The FIFO wraps a <code class="docutils literal notranslate"><span class="pre">FifoBypass</span></code> and presents
+an instruction-window abstraction with per-lane editable head state. Each
+lane in the head entry carries a 2-bit <code class="docutils literal notranslate"><span class="pre">inst_status</span></code> field with three
+states: <code class="docutils literal notranslate"><span class="pre">INVALID</span></code> (<code class="docutils literal notranslate"><span class="pre">2'b00</span></code>), <code class="docutils literal notranslate"><span class="pre">READY</span></code> (<code class="docutils literal notranslate"><span class="pre">2'b01</span></code>), and <code class="docutils literal notranslate"><span class="pre">DISPATCHED</span></code>
+(<code class="docutils literal notranslate"><span class="pre">2'b10</span></code>).</p>
+<p>The decode-issue pipeline reads the head entry each cycle and writes back
+per-lane status edits: lanes that fail instruction checks for a terminal
+reason are marked <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>, and lanes that successfully dispatch are
+marked <code class="docutils literal notranslate"><span class="pre">DISPATCHED</span></code>. These edits are maintained in shadow registers that
+overlay the FIFO head entry and reset when the head is popped or the FIFO
+is cleared. The head entry is popped (and the window advances) only when
+every lane in the current entry is either invalid, dispatching this cycle,
+or already dispatched, keeping all instructions in the fetch block together.</p>
+<p>The FIFO is reset on <code class="docutils literal notranslate"><span class="pre">ctrl_flow_sub.redirect_val</span></code> (an external redirect
+from an XU) and cleared on <code class="docutils literal notranslate"><span class="pre">ctrl_flow_pub_val_comb</span></code> (an internal redirect
+from a JAL/JALR dispatch in the current window).</p>
+</section>
+<section id="instruction-check-stages">
+<h2>Instruction Check Stages<a class="headerlink" href="#instruction-check-stages" title="Link to this heading"></a></h2>
+<p>Dispatch eligibility is evaluated through four cascaded <code class="docutils literal notranslate"><span class="pre">InstCheck</span></code> stages
+per lane, each gating on the result of the previous stage:</p>
+<ul class="simple">
+<li><p><strong>S1 – Validity:</strong> Checks that the FIFO entry is valid
+(<code class="docutils literal notranslate"><span class="pre">F_curr[i].val</span></code>), the instruction status is not <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>, and the
+decoder recognizes the instruction. This is the first filter and its
+<code class="docutils literal notranslate"><span class="pre">pass</span></code> output gates all subsequent stages.</p></li>
+<li><p><strong>S2 – Control-instruction ordering:</strong> Enforces ordering constraints
+around control-flow instructions (branches and jumps). The DIU scans
+the current window for the oldest undispatched control instruction
+(JAL/JALR/BRX) using wrap-around-safe sequence-number age comparisons
+via <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code>. For BRX instructions, younger instructions in the
+window are blocked from dispatching until the branch’s source operands
+are ready and it can be dispatched. For JAL/JALR instructions, the
+oldest control instruction must be able to dispatch (pass S4) before
+younger instructions proceed. Instructions younger than the oldest
+control instruction are also blocked when a redirect is pending on
+<code class="docutils literal notranslate"><span class="pre">ctrl_flow_sub</span></code>.</p></li>
+<li><p><strong>S3 – Physical register allocation:</strong> Checks that a free physical
+register is available for allocation (via <code class="docutils literal notranslate"><span class="pre">alloc_rdy</span></code>) for
+instructions that write a destination register. Lanes are checked in
+order, with each lane gating on the previous lane’s allocation success
+to prevent over-allocation.</p></li>
+<li><p><strong>S4 – Structural hazard (crossbar routing):</strong> Checks that the
+instruction was successfully routed to an issue queue by the
+<code class="docutils literal notranslate"><span class="pre">SSInstMapper</span></code> (i.e. the <code class="docutils literal notranslate"><span class="pre">lane_val</span></code> signal is asserted). Lanes
+are again checked in order to preserve dispatch ordering.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">invalidate</span></code> outputs from the check stages are OR-reduced per lane
+to determine whether to mark a lane <code class="docutils literal notranslate"><span class="pre">INVALID</span></code> in the instruction window.
+Only terminal failures (e.g. the fetch unit already flagged the lane
+<code class="docutils literal notranslate"><span class="pre">INVALID</span></code> at S1, or the decoder did not recognize the instruction) lead
+to <code class="docutils literal notranslate"><span class="pre">INVALID</span></code>; transient failures (waiting on an older control-flow
+instruction, free list empty, or losing the iSLIP grant this cycle) leave
+the lane in its previous state so it re-runs the checks on the next cycle.</p>
+</section>
+<section id="control-flow-handling">
+<h2>Control Flow Handling<a class="headerlink" href="#control-flow-handling" title="Link to this heading"></a></h2>
+<p>Because multiple instructions are decoded simultaneously, the DIU must
+handle the case where the current window contains control-flow instructions
+alongside younger instructions that should not be issued. The DIU scans all
+lanes each cycle to find the oldest undispatched control instruction
+(JAL/JALR/BRX), tracking its lane index, sequence number, and whether it
+is a branch (BRX) via <code class="docutils literal notranslate"><span class="pre">oldest_ctrl_inst_found</span></code>, <code class="docutils literal notranslate"><span class="pre">oldest_ctrl_inst_idx</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">oldest_ctrl_inst_is_brx</span></code>.</p>
+<p>For JAL/JALR instructions, when the oldest control instruction dispatches,
+the <code class="docutils literal notranslate"><span class="pre">DIUCtrlFlowPublisher</span></code> computes the jump target and publishes a
+redirect on the <code class="docutils literal notranslate"><span class="pre">ctrl_flow_pub</span></code> interface via the <code class="docutils literal notranslate"><span class="pre">ControlFlowNotif</span></code>.
+For JAL instructions, the target is <code class="docutils literal notranslate"><span class="pre">PC</span> <span class="pre">+</span> <span class="pre">imm</span></code>; for JALR, the target is
+<code class="docutils literal notranslate"><span class="pre">(rs1</span> <span class="pre">+</span> <span class="pre">imm)</span> <span class="pre">&amp;</span> <span class="pre">~1</span></code>, where <code class="docutils literal notranslate"><span class="pre">rs1</span></code> is read from the control pipe’s
+register file port. When branch prediction is enabled, the publisher also
+checks whether the JAL was already predicted taken (via the
+<code class="docutils literal notranslate"><span class="pre">predicted_taken</span></code> flag propagated from the fetch unit); if so, the
+redirect is suppressed since the fetch unit is already fetching from the
+correct target, and only a <code class="docutils literal notranslate"><span class="pre">bp_update_val</span></code> is asserted to confirm the
+prediction to the branch predictor. For unpredicted JALs and all JALRs,
+<code class="docutils literal notranslate"><span class="pre">redirect_val</span></code> is asserted. The redirect signals are combinational,
+relying on the downstream control-flow arbiter to break the combinational
+loop back to the fetch unit.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ctrl_flow_pub_val_comb</span></code> signal is used internally to clear the
+DIUFifo immediately when a jump dispatches.</p>
+<p>For BRX instructions, the DIU checks whether the oldest control
+instruction’s source operands are ready by performing a rename-table
+lookup through a dedicated port (port index <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code>). If the
+sources are not ready, the S2 check blocks all instructions in the
+window from dispatching, ensuring no instruction younger than an
+unresolved branch is speculatively issued.</p>
+<p>When a redirect arrives on the <code class="docutils literal notranslate"><span class="pre">ctrl_flow_sub</span></code> interface (from the
+CFU), the FIFO is reset, discarding all instructions in the current
+window.</p>
+</section>
+<section id="instruction-to-pipe-mapper-ssinstmapper">
+<h2>Instruction-to-Pipe Mapper: SSInstMapper<a class="headerlink" href="#instruction-to-pipe-mapper-ssinstmapper" title="Link to this heading"></a></h2>
+<p>The instruction-to-pipe mapper (<code class="docutils literal notranslate"><span class="pre">SSInstMapper</span></code>) computes a one-to-one
+mapping from <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> frontend lanes to <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> back-end
+pipes using a shared <code class="docutils literal notranslate"><span class="pre">ISLIPCore</span></code> matching engine, which implements a
+modified version of the iSLIP algorithm.</p>
+<p>First, a compatibility matrix is computed: for each (input lane, output
+pipe) pair, <code class="docutils literal notranslate"><span class="pre">iq_compat_op</span></code> is asserted when the instruction’s micro-op
+is supported by the pipe’s ISA subset (via <code class="docutils literal notranslate"><span class="pre">in_subset</span></code> checks), the
+instruction is valid, the queue is ready, and the queue has available
+slots. For pipes with <code class="docutils literal notranslate"><span class="pre">p_pipe_bypass</span></code> set, compatibility additionally
+requires that the instruction’s source operands are both ready (since
+bypass pipes issue combinationally with no buffering).</p>
+<p>The matching is performed by <code class="docutils literal notranslate"><span class="pre">ISLIPCore</span></code> over <code class="docutils literal notranslate"><span class="pre">p_num_iter</span></code> iterations
+(defaulting to <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code>), each consisting of two phases:</p>
+<ul class="simple">
+<li><p><strong>Grant phase (age-based):</strong> Each output pipe examines all compatible,
+unmatched inputs and grants to the oldest one, determined by an
+<code class="docutils literal notranslate"><span class="pre">AgePE</span></code> priority element using wrap-around-safe age comparison via
+the oldest committed sequence number from <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code>.</p></li>
+<li><p><strong>Accept phase (slot-based):</strong> Each input lane examines all outputs
+that granted to it and accepts the one with the most available
+issue-queue slots, determined by a <code class="docutils literal notranslate"><span class="pre">SlotsPE</span></code> priority element. Ties
+are broken in favor of the lower-indexed pipe.</p></li>
+</ul>
+<p>After each iteration, matched inputs and outputs are removed from
+consideration (via <code class="docutils literal notranslate"><span class="pre">input_free</span></code> and <code class="docutils literal notranslate"><span class="pre">output_free</span></code> masks), and the
+next iteration attempts to match the remaining unmatched ports. The
+final match results across all iterations are OR-reduced to produce
+per-pipe <code class="docutils literal notranslate"><span class="pre">iq_val</span></code> and <code class="docutils literal notranslate"><span class="pre">route_idx</span></code> signals (selecting which lane
+feeds each pipe) and per-lane <code class="docutils literal notranslate"><span class="pre">lane_val</span></code> and <code class="docutils literal notranslate"><span class="pre">lane_to_pipe_map</span></code>
+signals (indicating which pipe the lane was matched to, if any).</p>
+</section>
+<section id="data-router-ssinstrouter">
+<h2>Data Router: SSInstRouter<a class="headerlink" href="#data-router-ssinstrouter" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SSInstRouter</span></code> is a pure data router that muxes per-lane
+instruction data to per-pipe outputs based on the mapping produced by
+<code class="docutils literal notranslate"><span class="pre">SSInstMapper</span></code>. It consumes the <code class="docutils literal notranslate"><span class="pre">route_idx</span></code>, <code class="docutils literal notranslate"><span class="pre">iq_val</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">lane_to_pipe_map</span></code> signals from the mapper and produces per-pipe
+<code class="docutils literal notranslate"><span class="pre">iq_msg</span></code> and <code class="docutils literal notranslate"><span class="pre">iq_ins_try</span></code> outputs for the issue queues. It also
+computes <code class="docutils literal notranslate"><span class="pre">dispatch_go</span></code> per lane, which is asserted when the lane
+passes all instruction checks and the target issue queue is ready.</p>
+</section>
+<section id="issue-queue-selection-and-configuration">
+<h2>Issue Queue Selection and Configuration<a class="headerlink" href="#issue-queue-selection-and-configuration" title="Link to this heading"></a></h2>
+<p>Each pipe’s issue queue type is determined by a set of configuration
+parameters:</p>
+<ul class="simple">
+<li><p><strong>``p_pipe_bypass``:</strong> When set to 1, all pipes use bypass-mode issue
+queues (<code class="docutils literal notranslate"><span class="pre">IssueQueueInOrder</span></code> with <code class="docutils literal notranslate"><span class="pre">p_bypass=1</span></code>); when 0 (the
+default), only the control-subset pipe (the one whose ISA subset
+exactly matches <code class="docutils literal notranslate"><span class="pre">p_ctrl_subset</span></code>) uses bypass mode.</p></li>
+<li><p><strong>``p_mem_subset``:</strong> Defines the memory instruction subset. Pipes
+whose ISA subset intersects <code class="docutils literal notranslate"><span class="pre">p_mem_subset</span></code> are automatically forced
+to use in-order issue queues, since there is no load-store queue in
+the memory execute unit.</p></li>
+<li><p><strong>``p_all_iq_in_order``:</strong> When set, all issue queues use in-order
+issue regardless of pipe type.</p></li>
+</ul>
+<p>Pipes that are neither bypass nor forced in-order use the out-of-order
+<code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code> described below.</p>
+</section>
+<section id="in-order-issue-queue-issuequeueinorder">
+<h2>In-Order Issue Queue: IssueQueueInOrder<a class="headerlink" href="#in-order-issue-queue-issuequeueinorder" title="Link to this heading"></a></h2>
+<p>The in-order issue queue (<code class="docutils literal notranslate"><span class="pre">IssueQueueInOrder</span></code>) is a circular FIFO that
+buffers decoded instructions and issues them to the execute stage strictly
+in program order once both source operands are ready. Each issue queue has
+its own pair of rename-table lookup ports and register-file read ports,
+enabling independent operand resolution per queue.</p>
+<p>The queue maintains insert and dequeue pointers (<code class="docutils literal notranslate"><span class="pre">ins_ptr</span></code> and
+<code class="docutils literal notranslate"><span class="pre">deq_ptr</span></code>) to manage its circular buffer of entries. On insertion, the
+instruction’s decoded fields (micro-op, physical register addresses,
+immediate, PC, sequence number, etc.) are stored at the insert pointer. The
+<code class="docutils literal notranslate"><span class="pre">avail_slots</span></code> output communicates the remaining capacity to the
+<code class="docutils literal notranslate"><span class="pre">SSInstMapper</span></code> for load-balancing decisions.</p>
+<p>On the dequeue side, the queue looks up the source physical registers of
+the head-of-queue instruction in the rename table via the
+<code class="docutils literal notranslate"><span class="pre">rt_lookup_pending</span></code> signals. If neither source operand is pending (both
+ready), the queue asserts the dequeue handshake and drives the operand
+values read from the register file onto the execute interface, along with
+the rest of the instruction fields. In-order issue is enforced by only
+ever considering the instruction at the dequeue pointer for issue.</p>
+<p>The queue also supports a same-cycle bypass path: when the queue is empty
+and both the insert and dequeue handshakes are active simultaneously, the
+incoming instruction can bypass the entry storage entirely and be issued
+directly to the execute stage, avoiding the one-cycle latency of writing
+to and reading from the queue. When <code class="docutils literal notranslate"><span class="pre">p_bypass</span></code> is set, the queue
+operates in a fully stateless mode, acting as a combinational pass-through
+that gates the instruction based solely on operand readiness, with no
+internal storage. This bypass mode is what the control-flow pipe uses to
+keep branch resolution to a single cycle.</p>
+</section>
+<section id="out-of-order-issue-queue-issuequeueooo">
+<h2>Out-of-Order Issue Queue: IssueQueueOOO<a class="headerlink" href="#out-of-order-issue-queue-issuequeueooo" title="Link to this heading"></a></h2>
+<p>The out-of-order issue queue (<code class="docutils literal notranslate"><span class="pre">IssueQueueOOO</span></code>) is a drop-in alternative
+to <code class="docutils literal notranslate"><span class="pre">IssueQueueInOrder</span></code> that dequeues the oldest ready instruction rather
+than blocking on the in-order head. Source operand pending status is
+provided at insert time and tracked internally; the queue monitors
+completion notifications to clear pending bits, removing the need for
+rename-table lookups at dequeue.</p>
+<p>The queue maintains a flat array of entries with per-entry valid bits and
+per-entry source pending bits. On insertion, a free slot is selected via
+a priority encoder. On dequeue, the queue computes per-entry readiness
+(both sources not pending, with same-cycle completion bypass) and selects
+the oldest ready entry using XOR-based wrap-around-safe age comparison
+against the <code class="docutils literal notranslate"><span class="pre">oldest_seq_num</span></code> from <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code>. An entry <code class="docutils literal notranslate"><span class="pre">j</span></code> is
+considered older than entry <code class="docutils literal notranslate"><span class="pre">i</span></code> when
+<code class="docutils literal notranslate"><span class="pre">(seq[j]</span> <span class="pre">&lt;</span> <span class="pre">seq[i])</span> <span class="pre">^</span> <span class="pre">(seq[j]</span> <span class="pre">&lt;</span> <span class="pre">oldest)</span> <span class="pre">^</span> <span class="pre">(seq[i]</span> <span class="pre">&lt;</span> <span class="pre">oldest)</span></code>. The
+oldest ready entry is priority-encoded to produce the dequeue index.</p>
+<p>Like <code class="docutils literal notranslate"><span class="pre">IssueQueueInOrder</span></code>, the OOO queue supports a same-cycle bypass
+path when the queue is empty, issuing the incoming instruction directly
+if its sources are ready. When <code class="docutils literal notranslate"><span class="pre">p_bypass</span></code> is set, the queue operates in
+fully stateless bypass mode, identical to the in-order bypass behavior.</p>
+</section>
+<section id="sequence-age-tracker-ssseqage">
+<h2>Sequence Age Tracker: SSSeqAge<a class="headerlink" href="#sequence-age-tracker-ssseqage" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SSSeqAge</span></code> module (in <code class="docutils literal notranslate"><span class="pre">hw/util/</span></code>) tracks the oldest committed
+sequence number by monitoring the commit interface. This value is shared
+across the DIU and the CFU/WCU arbiters to provide consistent
+wrap-around-safe age comparisons. See <a class="reference internal" href="../../uarch/seq_nums/"><span class="doc">Sequence Numbers</span></a> for the
+underlying algorithm.</p>
+</section>
+<section id="register-file-ssregfile">
+<h2>Register File: SSRegfile<a class="headerlink" href="#register-file-ssregfile" title="Link to this heading"></a></h2>
+<p>The physical register file is implemented by a single shared <code class="docutils literal notranslate"><span class="pre">SSRegfile</span></code>
+instance with <code class="docutils literal notranslate"><span class="pre">p_num_pipes</span></code> lookup ports, one per backend pipe so that
+every pipe can independently read its source operands. The register file
+also has <code class="docutils literal notranslate"><span class="pre">p_num_be_lanes</span></code> write ports driven by the completion interface
+from the WCU, one write port per backend lane.</p>
+</section>
+<section id="rename-table-ssrenametable">
+<h2>Rename Table: SSRenameTable<a class="headerlink" href="#rename-table-ssrenametable" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SSRenameTable</span></code> supports <code class="docutils literal notranslate"><span class="pre">p_num_fe_lanes</span></code> simultaneous allocations
+with inter-lane destination register forwarding. The core data structures
+– a 31-entry rename table mapping architectural registers to physical
+registers with pending bits, and a free list tracking available physical
+registers – are unchanged from a single-lane rename table.</p>
+<p>For multi-lane allocation, each lane has its own <code class="docutils literal notranslate"><span class="pre">PriorityEncoder</span></code> that
+selects the first free physical register from the free list. To prevent
+multiple lanes from allocating the same physical register, lane <code class="docutils literal notranslate"><span class="pre">i</span></code>’s
+priority encoder input filters out any physical register already selected
+by lanes <code class="docutils literal notranslate"><span class="pre">0</span></code> through <code class="docutils literal notranslate"><span class="pre">i-1</span></code>, creating a forward dependency chain across
+lanes.</p>
+<p>The key addition over a single-lane rename table is destination register
+forwarding during source operand lookup. When lane <code class="docutils literal notranslate"><span class="pre">k</span></code> looks up the
+physical register for a source architectural register, it first reads the
+current mapping from the rename table, then checks whether any previous
+lane <code class="docutils literal notranslate"><span class="pre">m</span></code> (where <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">&lt;</span> <span class="pre">k</span></code>) in the same fetch block is allocating a new
+physical register for the same architectural register. If so, lane <code class="docutils literal notranslate"><span class="pre">k</span></code>
+uses lane <code class="docutils literal notranslate"><span class="pre">m</span></code>’s newly-allocated physical register instead of the stale
+table entry. This ensures that within a single fetch block, a later
+instruction correctly reads from the destination of an earlier instruction
+(e.g. <code class="docutils literal notranslate"><span class="pre">add</span> <span class="pre">x1,</span> <span class="pre">x2,</span> <span class="pre">x3</span></code> followed by <code class="docutils literal notranslate"><span class="pre">add</span> <span class="pre">x4,</span> <span class="pre">x1,</span> <span class="pre">x5</span></code> in the same block
+will have the second instruction’s <code class="docutils literal notranslate"><span class="pre">x1</span></code> source point to the physical
+register just allocated by the first instruction).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../fetch_unit/" class="btn btn-neutral float-left" title="Fetch Unit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../execute_units/" class="btn btn-neutral float-right" title="Execute Units (XU)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Parker Schless.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
